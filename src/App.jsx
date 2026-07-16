@@ -12,7 +12,7 @@ import Settings from './components/Settings';
 
 import { 
   LayoutDashboard, Flame, History as HistoryIcon, Settings as SettingsIcon, 
-  Sun, Moon, Download, LogOut, Loader2 
+  Sun, Moon, Download, LogOut, Loader2, PlusCircle 
 } from 'lucide-react';
 
 export default function App() {
@@ -55,18 +55,50 @@ export default function App() {
       if (currentUser) {
         setLoadingData(true);
         try {
-          // Load settings
-          const userSettings = await loadSettings(currentUser.uid);
+          // Load settings with inline try/catch fallback
+          let userSettings = null;
+          try {
+            userSettings = await loadSettings(currentUser.uid);
+          } catch (e) {
+            console.error("Failed to load settings from Firestore, using default:", e);
+          }
+
+          if (!userSettings) {
+            userSettings = {
+              userId: currentUser.uid,
+              targetCylinders: 200,
+              hasTimeLimit: false,
+              startDate: new Date().toISOString().split('T')[0],
+              endDate: "",
+              scheduleType: "none",
+              cadenceFrequency: 3,
+              cadencePeriod: "week",
+              weightCategories: [
+                { id: "1lb", name: "1 lb Cylinder", weight: 1, unit: "lb", targetCount: 100 },
+                { id: "2lb", name: "2 lb Cylinder", weight: 2, unit: "lb", targetCount: 50 },
+                { id: "3lb", name: "3 lb Cylinder", weight: 3, unit: "lb", targetCount: 30 },
+                { id: "5lb", name: "5 lb Cylinder", weight: 5, unit: "lb", targetCount: 20 }
+              ]
+            };
+          }
           setSettings(userSettings);
 
-          // Subscribe to throws
-          const unsubscribeThrows = subscribeToThrows(currentUser.uid, (updatedThrows) => {
-            setThrows(updatedThrows);
-            setLoadingData(false);
-          });
+          // Subscribe to throws with error handler
+          const unsubscribeThrows = subscribeToThrows(
+            currentUser.uid,
+            (updatedThrows) => {
+              setThrows(updatedThrows);
+              setLoadingData(false);
+            },
+            (error) => {
+              console.error("Failed to subscribe to throws:", error);
+              setThrows([]);
+              setLoadingData(false);
+            }
+          );
 
           return () => {
-            unsubscribeThrows();
+            if (typeof unsubscribeThrows === 'function') unsubscribeThrows();
           };
         } catch (err) {
           console.error("Error loading user data:", err);
@@ -195,7 +227,7 @@ export default function App() {
         <nav style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', flex: 1 }}>
           {[
             { id: 'dashboard', icon: <LayoutDashboard size={20} />, label: 'Dashboard' },
-            { id: 'log', icon: <Flame size={20} />, label: 'Log Throw' },
+            { id: 'log', icon: <PlusCircle size={20} />, label: 'Log Throw' },
             { id: 'history', icon: <HistoryIcon size={20} />, label: 'History' },
             { id: 'settings', icon: <SettingsIcon size={20} />, label: 'Settings' }
           ].map(tab => (
@@ -316,7 +348,7 @@ export default function App() {
       }}>
         {[
           { id: 'dashboard', icon: <LayoutDashboard size={20} />, label: 'Stats' },
-          { id: 'log', icon: <Flame size={20} />, label: 'Log' },
+          { id: 'log', icon: <PlusCircle size={20} />, label: 'Log' },
           { id: 'history', icon: <HistoryIcon size={20} />, label: 'History' },
           { id: 'settings', icon: <SettingsIcon size={20} />, label: 'Settings' }
         ].map(tab => (

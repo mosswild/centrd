@@ -223,7 +223,7 @@ export async function deleteThrowLog(throwId) {
   }
 }
 
-export function subscribeToThrows(userId, callback) {
+export function subscribeToThrows(userId, callback, errorCallback) {
   if (isMock()) {
     const fetchAndCallback = async () => {
       const all = await listLocal("throws");
@@ -274,6 +274,9 @@ export function subscribeToThrows(userId, callback) {
         });
         list.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
         callback(list);
+      }, (err) => {
+        console.error("Simple query fallback subscription failed:", err);
+        if (errorCallback) errorCallback(err);
       });
     });
   }
