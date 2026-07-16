@@ -15,6 +15,19 @@ import {
   Sun, Moon, Download, LogOut, Loader2, PlusCircle 
 } from 'lucide-react';
 
+const LOADING_MESSAGES = [
+  "Preparing the wheel...",
+  "Wedging the clay...",
+  "Centering the form...",
+  "Coning up...",
+  "Coning down...",
+  "Opening the center...",
+  "Pulling up the walls...",
+  "Compressing the rim...",
+  "Trimming the foot...",
+  "Firing the kiln..."
+];
+
 export default function App() {
   const [dbConfigured, setDbConfigured] = useState(isFirebaseConfigured());
   const [user, setUser] = useState(null);
@@ -29,6 +42,17 @@ export default function App() {
     return localStorage.getItem('throwing_log_theme') === 'dark';
   });
   const [exporting, setExporting] = useState(false);
+  const [loadingMsgIdx, setLoadingMsgIdx] = useState(0);
+
+  // Cycle loading messages
+  useEffect(() => {
+    if (authLoading || loadingData) {
+      const interval = setInterval(() => {
+        setLoadingMsgIdx((prev) => (prev + 1) % LOADING_MESSAGES.length);
+      }, 1500);
+      return () => clearInterval(interval);
+    }
+  }, [authLoading, loadingData]);
 
   // Apply dark mode theme
   useEffect(() => {
@@ -134,12 +158,14 @@ export default function App() {
     return <Onboarding />;
   }
 
-  // Show loading indicator during Auth validation
-  if (authLoading) {
+  // Show loading indicator during Auth validation or initial data fetch
+  if (authLoading || (user && (loadingData || !settings))) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: 'var(--bg-primary)' }}>
-        <Loader2 className="animate-spin" size={40} style={{ color: 'var(--terracotta)', animation: 'spin 1.5s linear infinite' }} />
-        <p style={{ marginTop: '1rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Firing up the Kiln...</p>
+        <Loader2 className="animate-spin" size={40} style={{ color: 'var(--terracotta)' }} />
+        <p className="animate-fade-in" key={loadingMsgIdx} style={{ marginTop: '1rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
+          {LOADING_MESSAGES[loadingMsgIdx]}
+        </p>
       </div>
     );
   }
@@ -167,15 +193,7 @@ export default function App() {
     );
   }
 
-  // Show loading during user settings & logs fetch
-  if (loadingData || !settings) {
-    return (
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: 'var(--bg-primary)' }}>
-        <Loader2 className="animate-spin" size={40} style={{ color: 'var(--terracotta)', animation: 'spin 1.5s linear infinite' }} />
-        <p style={{ marginTop: '1rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Centering Clay...</p>
-      </div>
-    );
-  }
+  // Loading handled by consolidated screen above
 
   // Render view
   const renderActiveView = () => {
