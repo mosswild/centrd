@@ -13,7 +13,7 @@ async function getImageData(url) {
     }
     return { data: bytes, extension: mime.split('/')[1] || 'jpg' };
   } else {
-    // Fetch remote image binary (e.g. from Firebase Storage)
+    // Fetch remote image binary
     const response = await fetch(url);
     const blob = await response.blob();
     const arrayBuffer = await blob.arrayBuffer();
@@ -73,6 +73,9 @@ export async function exportChallengeToZip(throws, settings) {
 
   md += `## Log Entries Detail\n\n`;
 
+  // Array to build the JSON backup metadata
+  const throwsBackup = [];
+
   // 2. Fetch and package images, link them in MD
   for (let index = 0; index < chronologicalThrows.length; index++) {
     const t = chronologicalThrows[index];
@@ -84,6 +87,8 @@ export async function exportChallengeToZip(throws, settings) {
     md += `- **Logged Weight:** ${actualWeight}\n`;
     md += `- **Quality/Status:** ${t.status || 'Successful'}\n`;
     md += `- **Notes:** ${t.notes || '*No notes recorded.*'}\n\n`;
+
+    const photosBackup = [];
 
     if (t.photos && t.photos.length > 0) {
       md += `#### Photos\n\n`;
@@ -103,11 +108,19 @@ export async function exportChallengeToZip(throws, settings) {
           // Embed in MD
           md += `**Stage: ${photo.stage}**\n`;
           md += `![${photo.stage} Image](images/${fullFilename})\n\n`;
+
+          // Track backup mapping
+          photosBackup.push({
+            ...photo,
+            zipPath: `images/${fullFilename}`
+          });
         } catch (err) {
           console.error(`Failed to package image for throw #${index + 1} stage ${photo.stage}`, err);
           // Fallback to remote URL in markdown
           md += `**Stage: ${photo.stage}** (Image package failed, embedding cloud link)\n`;
           md += `![${photo.stage} Image](${photo.url})\n\n`;
+
+          photosBackup.push(photo);
         }
       }
     } else {
@@ -115,12 +128,24 @@ export async function exportChallengeToZip(throws, settings) {
     }
     
     md += `---\n\n`;
+
+    throwsBackup.push({
+      ...t,
+      photos: photosBackup
+    });
   }
 
-  // 3. Save Markdown to ZIP
+  // 3. Save JSON Backup file to ZIP
+  zip.file("centrd_backup_data.json", JSON.stringify({
+    version: "1.0",
+    settings: settings,
+    throws: throwsBackup
+  }, null, 2));
+
+  // 4. Save Markdown to ZIP
   zip.file("challenge_log.md", md);
 
-  // 4. Generate and download ZIP file
+  // 5. Generate and download ZIP file
   const content = await zip.generateAsync({ type: "blob" });
   const downloadUrl = URL.createObjectURL(content);
   const a = document.createElement("a");

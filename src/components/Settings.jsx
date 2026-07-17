@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { saveSettings, signOutUser } from '../db';
-import { Settings as SettingsIcon, LogOut, Download, Upload, Plus, Trash2 } from 'lucide-react';
+import { Settings as SettingsIcon, LogOut, Download, Upload, Plus, Trash2, Loader2 } from 'lucide-react';
+import { importChallengeFromZip } from '../utils/importer';
 
 export default function Settings({ settings, user, onSettingsUpdate }) {
   const [targetCylinders, setTargetCylinders] = useState(settings.targetCylinders || 200);
@@ -13,6 +14,8 @@ export default function Settings({ settings, user, onSettingsUpdate }) {
   const [globalUnit, setGlobalUnit] = useState(settings.globalUnit || 'lb');
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
+  const [importingZip, setImportingZip] = useState(false);
+  const [importProgress, setImportProgress] = useState({ current: 0, total: 0 });
 
   const handleGlobalUnitChange = (newUnit) => {
     setGlobalUnit(newUnit);
@@ -150,6 +153,33 @@ export default function Settings({ settings, user, onSettingsUpdate }) {
       }
     };
     reader.readAsText(file);
+  };
+
+  const handleImportZipFile = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (!window.confirm("Importing this ZIP log will merge it into your active profile. Settings will be updated and throw logs will be loaded. Do you want to proceed?")) {
+      e.target.value = '';
+      return;
+    }
+
+    setImportingZip(true);
+    setImportProgress({ current: 0, total: 0 });
+
+    try {
+      const result = await importChallengeFromZip(file, user.id, (current, total) => {
+        setImportProgress({ current, total });
+      });
+      alert(`Success! Successfully imported ${result.importedCount} throw logs into your profile.`);
+      window.location.reload();
+    } catch (err) {
+      console.error(err);
+      alert(`Import Failed: ${err.message}`);
+    } finally {
+      setImportingZip(false);
+      e.target.value = '';
+    }
   };
 
   const handleResetDatabase = () => {
@@ -462,6 +492,56 @@ export default function Settings({ settings, user, onSettingsUpdate }) {
               style={{ display: 'none' }}
             />
           </label>
+        </div>
+
+        {/* Backup & Restore ZIP Log */}
+        <div className="glass" style={{
+          marginTop: '2rem',
+          padding: '1.5rem',
+          borderRadius: '20px',
+          border: '1px dashed var(--border-color)',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '1rem'
+        }}>
+          <div>
+            <h4 style={{ fontWeight: 700, fontSize: '0.95rem' }}>Backup & Restore Journal</h4>
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+              Restore settings, throw history, and clay stage photos from a previously exported Centrd ZIP log.
+            </p>
+          </div>
+          <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+            {importingZip ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                <Loader2 size={16} className="animate-spin" />
+                <span>Importing ({importProgress.current}/{importProgress.total})...</span>
+              </div>
+            ) : (
+              <label className="btn btn-secondary" style={{
+                color: 'var(--text-primary)',
+                background: 'none',
+                fontSize: '0.8rem',
+                padding: '0.5rem 1rem',
+                margin: 0,
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderColor: 'var(--border-color)'
+              }}>
+                <Upload size={14} style={{ marginRight: '0.35rem' }} />
+                Import ZIP Log
+                <input
+                  type="file"
+                  accept=".zip"
+                  onChange={handleImportZipFile}
+                  style={{ display: 'none' }}
+                />
+              </label>
+            )}
+          </div>
         </div>
 
         {/* Database Connection Reset */}
