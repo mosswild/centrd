@@ -76,6 +76,9 @@ http://<YOUR-SERVER-IP-ADDRESS>:5000
 ```
 *(Example: `http://192.168.1.45:5000`)*
 
+> [!NOTE]
+> **Custom Hostname (Local DNS):** If you prefer not to type your server's IP address and port number every time, you can configure a friendly hostname (like `http://centrd.local`). Check out the [Local DNS & Port Setup Guide](docs/DNS_SETUP.md) for instructions.
+
 > [!TIP]
 > **Mobile Home Screen App:** You can add Centrd to your phone's home screen for an app-like experience!
 > * **iOS (Safari):** Tap the **Share** button and select **"Add to Home Screen"**.
