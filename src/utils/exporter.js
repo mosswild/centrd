@@ -64,9 +64,10 @@ export async function exportChallengeToZip(throws, settings) {
 
   chronologicalThrows.forEach((t, index) => {
     const category = settings.weightCategories.find(c => c.id === t.weightClass) || { name: t.weightClass };
+    const actualWeight = t.weightValue !== undefined ? `${t.weightValue} ${settings.globalUnit || 'lb'}` : `${category.weight || ''} ${settings.globalUnit || 'lb'}`;
     const notesCell = t.notes ? t.notes.replace(/\n/g, ' ') : '';
     const photoCount = t.photos ? t.photos.length : 0;
-    md += `| ${index + 1} | ${t.dateThrown} | ${category.name} | ${t.status || 'Successful'} | ${notesCell} | ${photoCount} photos |\n`;
+    md += `| ${index + 1} | ${t.dateThrown} | ${category.name} (${actualWeight}) | ${t.status || 'Successful'} | ${notesCell} | ${photoCount} photos |\n`;
   });
   md += `\n\n---\n\n`;
 
@@ -76,9 +77,11 @@ export async function exportChallengeToZip(throws, settings) {
   for (let index = 0; index < chronologicalThrows.length; index++) {
     const t = chronologicalThrows[index];
     const category = settings.weightCategories.find(c => c.id === t.weightClass) || { name: t.weightClass };
+    const actualWeight = t.weightValue !== undefined ? `${t.weightValue} ${settings.globalUnit || 'lb'}` : `${category.weight || ''} ${settings.globalUnit || 'lb'}`;
     
     md += `### Cylinder #${index + 1} - ${t.dateThrown}\n`;
     md += `- **Weight Class:** ${category.name}\n`;
+    md += `- **Logged Weight:** ${actualWeight}\n`;
     md += `- **Quality/Status:** ${t.status || 'Successful'}\n`;
     md += `- **Notes:** ${t.notes || '*No notes recorded.*'}\n\n`;
 

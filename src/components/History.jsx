@@ -167,7 +167,6 @@ export default function History({ throws, settings, user }) {
       <input
         type="file"
         accept="image/*"
-        capture="environment"
         ref={fileInputRef}
         onChange={handleStagePhotoUpload}
         style={{ display: 'none' }}
@@ -284,6 +283,9 @@ export default function History({ throws, settings, user }) {
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
                       <div>
                         <h3 className="serif-title" style={{ fontSize: '1.3rem', fontWeight: 700 }}>{category.name}</h3>
+                        <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.1rem' }}>
+                          Weight: {item.weightValue !== undefined ? item.weightValue : category.weight} {settings.globalUnit || 'lb'}
+                        </div>
                         <span style={{
                           fontSize: '0.75rem',
                           fontWeight: 700,

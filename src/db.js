@@ -131,6 +131,7 @@ export async function loadSettings(userId) {
       scheduleType: "none", // "none" | "deadline" | "cadence"
       cadenceFrequency: 3,
       cadencePeriod: "week", // "day" | "week" | "month"
+      globalUnit: "lb",
       weightCategories: [
         { id: "1lb", name: "1 lb Cylinder", weight: 1, unit: "lb", targetCount: 100 },
         { id: "2lb", name: "2 lb Cylinder", weight: 2, unit: "lb", targetCount: 50 },
@@ -155,6 +156,7 @@ export async function loadSettings(userId) {
       scheduleType: "none", // "none" | "deadline" | "cadence"
       cadenceFrequency: 3,
       cadencePeriod: "week", // "day" | "week" | "month"
+      globalUnit: "lb",
       weightCategories: [
         { id: "1lb", name: "1 lb Cylinder", weight: 1, unit: "lb", targetCount: 100 },
         { id: "2lb", name: "2 lb Cylinder", weight: 2, unit: "lb", targetCount: 50 },

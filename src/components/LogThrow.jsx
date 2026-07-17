@@ -4,7 +4,8 @@ import { Camera, Upload, AlertCircle, FileText, CheckCircle, Flame } from 'lucid
 import confetti from 'canvas-confetti';
 
 export default function LogThrow({ settings, user, onNavigateToHistory }) {
-  const [weightClass, setWeightClass] = useState(settings.weightCategories[0]?.id || '1lb');
+  const globalUnit = settings.globalUnit || 'lb';
+  const [weightInput, setWeightInput] = useState('1.0');
   const [dateThrown, setDateThrown] = useState(() => {
     const now = new Date();
     const year = now.getFullYear();
@@ -106,10 +107,35 @@ export default function LogThrow({ settings, user, onNavigateToHistory }) {
     setLoading(true);
     setError('');
 
+    const parsedWeight = parseFloat(weightInput);
+    if (isNaN(parsedWeight) || parsedWeight <= 0) {
+      setError('Please enter a valid weight.');
+      setLoading(false);
+      return;
+    }
+
+    // Find the closest weight category target configured in settings
+    let matchedClass = '1lb';
+    if (settings.weightCategories && settings.weightCategories.length > 0) {
+      let closestCat = settings.weightCategories[0];
+      let minDiff = Math.abs(parseFloat(closestCat.weight) - parsedWeight);
+      
+      for (let i = 1; i < settings.weightCategories.length; i++) {
+        const cat = settings.weightCategories[i];
+        const diff = Math.abs(parseFloat(cat.weight) - parsedWeight);
+        if (diff < minDiff) {
+          minDiff = diff;
+          closestCat = cat;
+        }
+      }
+      matchedClass = closestCat.id;
+    }
+
     try {
       const throwData = {
         dateThrown,
-        weightClass,
+        weightClass: matchedClass,
+        weightValue: parsedWeight,
         status,
         notes: notes.trim(),
         photos: []
@@ -186,20 +212,19 @@ export default function LogThrow({ settings, user, onNavigateToHistory }) {
       <form onSubmit={handleSubmit} className="glass" style={{ padding: '2rem', borderRadius: '24px', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
         
         {/* Row 1: Weight & Date */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.2rem' }}>
+        <div className="responsive-grid-2">
           <div>
-            <label htmlFor="weightClass">Weight Class</label>
-            <select
-              id="weightClass"
-              value={weightClass}
-              onChange={(e) => setWeightClass(e.target.value)}
-            >
-              {settings.weightCategories.map(cat => (
-                <option key={cat.id} value={cat.id}>
-                  {cat.name} ({cat.weight} {cat.unit})
-                </option>
-              ))}
-            </select>
+            <label htmlFor="weightValue">Weight ({globalUnit})</label>
+            <input
+              id="weightValue"
+              type="number"
+              step="any"
+              min="0.01"
+              placeholder="e.g. 1.5"
+              value={weightInput}
+              onChange={(e) => setWeightInput(e.target.value)}
+              required
+            />
           </div>
 
           <div>
@@ -259,7 +284,6 @@ export default function LogThrow({ settings, user, onNavigateToHistory }) {
           <input
             type="file"
             accept="image/*"
-            capture="environment" // open camera by default on mobile
             onChange={handlePhotoChange}
             ref={fileInputRef}
             style={{ display: 'none' }}

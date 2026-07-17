@@ -334,3 +334,16 @@ label {
 .animate-spin {
   animation: spin 1.2s linear infinite !important;
 }
+
+/* Responsive Grid for mobile viewports */
+.responsive-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.2rem;
+}
+@media (max-width: 500px) {
+  .responsive-grid-2 {
+    grid-template-columns: 1fr;
+    gap: 0.8rem;
+  }
+}

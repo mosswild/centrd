@@ -11,8 +11,18 @@ export default function Settings({ settings, user, onSettingsUpdate }) {
   const [cadenceFrequency, setCadenceFrequency] = useState(settings.cadenceFrequency || 3);
   const [cadencePeriod, setCadencePeriod] = useState(settings.cadencePeriod || 'week');
   const [weightCategories, setWeightCategories] = useState(settings.weightCategories || []);
+  const [globalUnit, setGlobalUnit] = useState(settings.globalUnit || 'lb');
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
+
+  const handleGlobalUnitChange = (newUnit) => {
+    setGlobalUnit(newUnit);
+    const updated = weightCategories.map(cat => ({
+      ...cat,
+      unit: newUnit
+    }));
+    setWeightCategories(updated);
+  };
 
   const handleCategoryChange = (index, field, value) => {
     const updated = [...weightCategories];
@@ -33,7 +43,7 @@ export default function Settings({ settings, user, onSettingsUpdate }) {
       id: newId,
       name: 'New Weight Class',
       weight: 1,
-      unit: 'lb',
+      unit: globalUnit,
       targetCount: 10
     };
     const updated = [...weightCategories, newCat];
@@ -67,7 +77,12 @@ export default function Settings({ settings, user, onSettingsUpdate }) {
         endDate: scheduleType === 'deadline' ? endDate : '',
         cadenceFrequency: Number(cadenceFrequency),
         cadencePeriod,
-        weightCategories
+        weightCategories: weightCategories.map(cat => ({
+          ...cat,
+          weight: Math.round(Number(cat.weight)) || 1,
+          unit: globalUnit
+        })),
+        globalUnit
       };
 
       await saveSettings(user.uid, updatedSettings);
@@ -91,7 +106,12 @@ export default function Settings({ settings, user, onSettingsUpdate }) {
       endDate,
       cadenceFrequency,
       cadencePeriod,
-      weightCategories
+      weightCategories: weightCategories.map(cat => ({
+        ...cat,
+        weight: Math.round(Number(cat.weight)) || 1,
+        unit: globalUnit
+      })),
+      globalUnit
     };
 
     const blob = new Blob([JSON.stringify(settingsData, null, 2)], { type: 'application/json' });
@@ -225,6 +245,18 @@ export default function Settings({ settings, user, onSettingsUpdate }) {
               </span>
             </div>
 
+            <div>
+              <label htmlFor="globalUnit">Global Weight Unit</label>
+              <select
+                id="globalUnit"
+                value={globalUnit}
+                onChange={(e) => handleGlobalUnitChange(e.target.value)}
+              >
+                <option value="lb">Pounds (lb)</option>
+                <option value="kg">Kilograms (kg)</option>
+              </select>
+            </div>
+
             {/* Pacing selection tabs */}
             <div>
               <label>Pacing & Schedule Strategy</label>
@@ -340,7 +372,7 @@ export default function Settings({ settings, user, onSettingsUpdate }) {
             {weightCategories.map((cat, idx) => (
               <div key={cat.id || idx} style={{
                 display: 'grid',
-                gridTemplateColumns: '2fr 1.5fr 1fr 1.5fr 40px',
+                gridTemplateColumns: '2.5fr 1.2fr 40px 1.5fr 30px',
                 gap: '0.75rem',
                 alignItems: 'center',
                 background: 'var(--bg-secondary)',
@@ -361,24 +393,17 @@ export default function Settings({ settings, user, onSettingsUpdate }) {
                 <div>
                   <input
                     type="number"
-                    step="any"
+                    step="1"
+                    min="1"
                     placeholder="Weight"
                     value={cat.weight}
-                    onChange={(e) => handleCategoryChange(idx, 'weight', e.target.value)}
+                    onChange={(e) => handleCategoryChange(idx, 'weight', e.target.value === '' ? '' : Math.round(Number(e.target.value)))}
                     style={{ fontSize: '0.85rem', padding: '0.4rem 0.6rem' }}
                   />
                 </div>
 
-                <div>
-                  <select
-                    value={cat.unit}
-                    onChange={(e) => handleCategoryChange(idx, 'unit', e.target.value)}
-                    style={{ fontSize: '0.85rem', padding: '0.4rem 0.6rem' }}
-                  >
-                    <option value="lb">lb</option>
-                    <option value="kg">kg</option>
-                    <option value="g">g</option>
-                  </select>
+                <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', fontWeight: 600, paddingLeft: '0.25rem' }}>
+                  {globalUnit}
                 </div>
 
                 <div>
