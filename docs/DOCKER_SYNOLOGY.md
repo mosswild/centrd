@@ -56,7 +56,7 @@ version: '3.8'
 
 services:
   centrd:
-    build: https://github.com/faberc/centrd.git#main
+    build: https://github.com/mosswild/centrd.git#main
     # Or use local path / custom image if building manually:
     # image: centrd:latest
     container_name: centrd
@@ -87,7 +87,7 @@ services:
 2. Navigate to your Docker shared folder and clone the repository:
    ```bash
    cd /volume1/docker
-   git clone https://github.com/faberc/centrd.git
+   git clone https://github.com/mosswild/centrd.git
    cd centrd
    ```
 3. Edit `docker-compose.yml` to set your `PUID` and `PGID`:

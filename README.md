@@ -73,7 +73,7 @@ Clone the repository and install the fullstack dependencies:
 
 ```bash
 # Clone the repository
-git clone https://github.com/faberc/centrd.git
+git clone https://github.com/mosswild/centrd.git
 cd centrd
 
 # Install packages
