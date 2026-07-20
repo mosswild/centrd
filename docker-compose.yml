@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  centrd:
+    image: centrd:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: centrd
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Etc/UTC
+      - PORT=5000
+      - DATA_DIR=/config/data
+      - UPLOADS_DIR=/config/uploads
+    volumes:
+      # Exposes database (db.json) and uploads directory to host volume mount
+      - ./config:/config

@@ -22,13 +22,53 @@ This version runs on a **100% self-hosted, local-first fullstack architecture**,
 
 ## 🚀 Home Server Setup Walkthrough
 
-Setting up Centrd on a home server (like a Raspberry Pi, NAS, Home Assistant host, or any computer on your network) is quick and requires no external databases or cloud API keys.
+Setting up Centrd on a home server (like a Synology NAS, Raspberry Pi, Home Assistant host, or any local server) is quick and requires no external databases or cloud API keys.
 
-### 📋 Prerequisites
+---
+
+### Option A: Docker Container & Synology NAS Deployment (Recommended for NAS)
+
+Centrd can be deployed inside a Docker container with external volume mounts exposing the database (`db.json`) and photo uploads (`uploads/`) to your host filesystem.
+
+Using `docker-compose`:
+
+```yaml
+version: '3.8'
+
+services:
+  centrd:
+    build: .
+    container_name: centrd
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      - PUID=1000          # Set to your user ID (e.g. 1026 for Synology user)
+      - PGID=1000          # Set to your group ID (e.g. 100 for Synology group)
+      - TZ=America/New_York
+      - PORT=5000
+      - DATA_DIR=/config/data
+      - UPLOADS_DIR=/config/uploads
+    volumes:
+      - ./config:/config  # Maps db.json & uploads folder to host
+```
+
+Start the container:
+```bash
+docker compose up -d --build
+```
+
+> 📖 **Synology NAS Setup Guide:** For step-by-step GUI instructions using **Synology Container Manager**, check out the [Synology NAS Docker Setup Guide](docs/DOCKER_SYNOLOGY.md).
+
+---
+
+### Option B: Local Node.js Setup (Bare Metal / Development)
+
+#### 📋 Prerequisites
 * **Node.js** (v18.0 or newer)
 * **npm** (comes packaged with Node.js)
 
-### 1. Download and Install
+#### 1. Download and Install
 Clone the repository and install the fullstack dependencies:
 
 ```bash
@@ -40,7 +80,7 @@ cd centrd
 npm install
 ```
 
-### 2. Compile and Start the Server
+#### 2. Compile and Start the Server
 From the root of your cloned `centrd` directory, build the optimized client files and boot the database backend:
 
 ```bash
