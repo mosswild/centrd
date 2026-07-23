@@ -9,12 +9,12 @@ services:
     container_name: centrd
     restart: unless-stopped
     ports:
-      - "5000:5000"
+      - "5001:5001"
     environment:
       - PUID=1000
       - PGID=1000
       - TZ=Etc/UTC
-      - PORT=5000
+      - PORT=5001
       - DATA_DIR=/config/data
       - UPLOADS_DIR=/config/uploads
     volumes:

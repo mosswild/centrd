@@ -62,12 +62,12 @@ services:
     container_name: centrd
     restart: unless-stopped
     ports:
-      - "5000:5000"
+      - "5001:5001"
     environment:
       - PUID=1026          # Replace with your Synology UID
       - PGID=100           # Replace with your Synology GID
       - TZ=America/New_York
-      - PORT=5000
+      - PORT=5001
       - DATA_DIR=/config/data
       - UPLOADS_DIR=/config/uploads
     volumes:
@@ -106,9 +106,9 @@ services:
 Once the container is running, access Centrd in your web browser at:
 
 ```text
-http://<YOUR-SYNOLOGY-IP>:5000
+http://<YOUR-SYNOLOGY-IP>:5001
 ```
-*(Example: `http://192.168.1.100:5000`)*
+*(Example: `http://192.168.1.100:5001`)*
 
 ### Setting up a Custom Domain / HTTPS (Synology Reverse Proxy)
 
@@ -123,7 +123,7 @@ If you want a clean address like `https://centrd.local` or `https://centrd.myhom
    * **Destination:**
      * Protocol: `HTTP`
      * Hostname: `localhost`
-     * Port: `5000`
+     * Port: `5001`
 3. Click **Save**.
 
 ---

@@ -31,7 +31,7 @@ COPY --from=builder /app/dist ./dist
 
 # Environment variables for default Docker configuration
 ENV NODE_ENV=production \
-    PORT=5000 \
+    PORT=5001 \
     DATA_DIR=/config/data \
     UPLOADS_DIR=/config/uploads \
     PUID=1000 \
@@ -40,7 +40,7 @@ ENV NODE_ENV=production \
 # Declare persistent volume mount point
 VOLUME ["/config"]
 
-EXPOSE 5000
+EXPOSE 5001
 
 ENTRYPOINT ["docker-entrypoint.sh"]
 CMD ["npm", "start"]

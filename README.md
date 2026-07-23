@@ -41,12 +41,12 @@ services:
     container_name: centrd
     restart: unless-stopped
     ports:
-      - "5000:5000"
+      - "5001:5001"
     environment:
       - PUID=1000          # Set to your user ID (e.g. 1026 for Synology user)
       - PGID=1000          # Set to your group ID (e.g. 100 for Synology group)
       - TZ=America/New_York
-      - PORT=5000
+      - PORT=5001
       - DATA_DIR=/config/data
       - UPLOADS_DIR=/config/uploads
     volumes:
@@ -91,7 +91,7 @@ npm run build
 npm run server
 ```
 
-The server is now running on port **`5000`**.
+The server is now running on port **`5001`**.
 
 ---
 
@@ -106,12 +106,12 @@ On your host server, open the terminal and find its local network IP address:
 * **Windows:** Run `ipconfig` in Command Prompt (look for `IPv4 Address`).
 
 ### Step 2: Open Centrd on Client Devices
-Open the web browser on your phone or tablet (e.g., Safari on iPhone, Chrome on Android) and navigate to your server's IP address on port `5000`:
+Open the web browser on your phone or tablet (e.g., Safari on iPhone, Chrome on Android) and navigate to your server's IP address on port `5001`:
 
 ```text
-http://<YOUR-SERVER-IP-ADDRESS>:5000
+http://<YOUR-SERVER-IP-ADDRESS>:5001
 ```
-*(Example: `http://192.168.1.45:5000`)*
+*(Example: `http://192.168.1.45:5001`)*
 
 > [!NOTE]
 > **Custom Hostname (Local DNS):** If you prefer not to type your server's IP address and port number every time, you can configure a friendly hostname (like `http://centrd.local`). Check out the [Local DNS & Port Setup Guide](docs/DNS_SETUP.md) for instructions.
@@ -128,11 +128,11 @@ http://<YOUR-SERVER-IP-ADDRESS>:5000
 If you want to run the application locally to test, modify code, or style components:
 
 ```bash
-# Concurrently starts the backend server (port 5000) and Vite frontend server (port 5173)
+# Concurrently starts the backend server (port 5001) and Vite frontend server (port 5173)
 npm run dev
 ```
 
-Open **`http://localhost:5173/centrd/`** in your browser. Any requests to `/centrd/api` are automatically proxied to port `5000` by the dev server.
+Open **`http://localhost:5173/centrd/`** in your browser. Any requests to `/centrd/api` are automatically proxied to port `5001` by the dev server.
 
 ---
 

@@ -1,6 +1,6 @@
 # 🌐 Local DNS & Port Setup Guide
 
-This guide explains how to configure a friendly, natural hostname (like `http://centrd.local` or `http://centrd.home`) for your self-hosted **Centrd** diary, allowing you to bypass typing raw IP addresses and port numbers (`:5000`) on your home network.
+This guide explains how to configure a friendly, natural hostname (like `http://centrd.local` or `http://centrd.home`) for your self-hosted **Centrd** diary, allowing you to bypass typing raw IP addresses and port numbers (`:5001`) on your home network.
 
 ---
 
@@ -11,7 +11,7 @@ Choose one of the following methods to map a friendly name to your server's loca
 ### Method A: Zero-Configuration mDNS (Easiest)
 By default, most modern operating systems automatically broadcast their hostname on the local network as `<hostname>.local`.
 1. Find your server's hostname (e.g. `pottery-pi` or `mac-studio`).
-2. Visit **`http://[hostname].local:5000`** in your browser. 
+2. Visit **`http://[hostname].local:5001`** in your browser. 
 3. This is built-in and requires no configuration on standard home routers.
 
 ### Method B: Pi-hole or AdGuard Home DNS (Cleanest)
@@ -21,20 +21,20 @@ If you run a local DNS resolver on your home network:
 3. Create a record:
    * **Domain:** `centrd.home` (or `centrd.local`)
    * **IP Address:** `192.168.1.45` (your server's IP)
-4. Save the record. You can now access it at `http://centrd.home:5000`.
+4. Save the record. You can now access it at `http://centrd.home:5001`.
 
 ### Method C: Public Domain Registrar Mapping
 If you own a domain name (e.g. `yourname.com`):
 1. In your registrar's DNS panel, add a new **A Record** (e.g., subdomain `diary.yourname.com`).
 2. Point it to your **private local IP** (`192.168.1.45`).
-3. Now, `http://diary.yourname.com:5000` will work.
+3. Now, `http://diary.yourname.com:5001` will work.
    * *Note: This domain will only resolve when your devices are connected to your home Wi-Fi. Outside your home, it will timeout, ensuring local data privacy.*
 
 ---
 
-## 🔌 Step 2: Bypassing the `:5000` Port Number
+## 🔌 Step 2: Bypassing the `:5001` Port Number
 
-DNS only translates names to IPs. Browsers default HTTP requests to port **`80`** (and HTTPS to **`443`**). If your server runs on port `5000`, you must normally append `:5000` to the URL. 
+DNS only translates names to IPs. Browsers default HTTP requests to port **`80`** (and HTTPS to **`443`**). If your server runs on port `5001`, you must normally append `:5001` to the URL. 
 
 To remove it, use one of the two strategies below:
 
@@ -58,7 +58,7 @@ If port `80` is already in use by other home services on your server, a reverse 
 2. Create a file named `Caddyfile` in your configuration folder containing:
    ```text
    centrd.local {
-       reverse_proxy localhost:5000
+       reverse_proxy localhost:5001
    }
    ```
-3. Start Caddy. It will listen on standard port 80 for `centrd.local` and seamlessly proxy traffic to port 5000. Typing **`http://centrd.local`** will now load the app.
+3. Start Caddy. It will listen on standard port 80 for `centrd.local` and seamlessly proxy traffic to port 5001. Typing **`http://centrd.local`** will now load the app.
