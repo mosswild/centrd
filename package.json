@@ -16,6 +16,7 @@
   "dependencies": {
     "canvas-confetti": "^1.9.4",
     "cors": "^2.8.6",
+    "express": "^5.2.1",
     "firebase": "^12.16.0",
     "jszip": "^3.10.1",
     "lucide-react": "^1.24.0",
@@ -27,7 +28,7 @@
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.3",
-    "concurrently": "^10.0.3",
+    "concurrently": "^9.2.4",
     "gh-pages": "^6.3.0",
     "oxlint": "^1.71.0",
     "vite": "^8.1.1"
