@@ -1,0 +1,6 @@
+# Auto-detect text files and normalize line endings
+* text=auto
+
+# Enforce Unix LF line endings for shell scripts and Dockerfile across all OS checkouts
+*.sh text eol=lf
+Dockerfile text eol=lf

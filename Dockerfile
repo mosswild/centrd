@@ -24,7 +24,7 @@ RUN npm ci --omit=dev
 # Copy backend server code and entrypoint script
 COPY server/ ./server/
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
-RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+RUN sed -i 's/\r$//' /usr/local/bin/docker-entrypoint.sh && chmod +x /usr/local/bin/docker-entrypoint.sh
 
 # Copy built frontend assets from builder stage
 COPY --from=builder /app/dist ./dist
