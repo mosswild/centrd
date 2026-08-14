@@ -84,13 +84,16 @@ function broadcastThrowsUpdate(userId) {
   });
 }
 
+// --- API ROUTER ---
+const apiRouter = express.Router();
+
 // --- PROFILE APIS ---
-app.get('/api/profiles', (req, res) => {
+apiRouter.get('/profiles', (req, res) => {
   const db = readDb();
   res.json(db.profiles || []);
 });
 
-app.post('/api/profiles', (req, res) => {
+apiRouter.post('/profiles', (req, res) => {
   const { name, studio, avatar } = req.body;
   if (!name) return res.status(400).json({ error: 'Name is required' });
 
@@ -105,7 +108,7 @@ app.post('/api/profiles', (req, res) => {
   res.json(newProfile);
 });
 
-app.delete('/api/profiles/:id', (req, res) => {
+apiRouter.delete('/profiles/:id', (req, res) => {
   const { id } = req.params;
   const db = readDb();
 
@@ -151,7 +154,7 @@ app.delete('/api/profiles/:id', (req, res) => {
 });
 
 // --- SETTINGS APIS ---
-app.get('/api/settings/:userId', (req, res) => {
+apiRouter.get('/settings/:userId', (req, res) => {
   const { userId } = req.params;
   const db = readDb();
   const userSettings = db.settings ? db.settings[userId] : null;
@@ -180,7 +183,7 @@ app.get('/api/settings/:userId', (req, res) => {
   });
 });
 
-app.post('/api/settings', (req, res) => {
+apiRouter.post('/settings', (req, res) => {
   const settings = req.body;
   const { userId } = settings;
   if (!userId) return res.status(400).json({ error: 'userId is required' });
@@ -194,7 +197,7 @@ app.post('/api/settings', (req, res) => {
 });
 
 // --- THROWS APIS ---
-app.get('/api/throws/:userId', (req, res) => {
+apiRouter.get('/throws/:userId', (req, res) => {
   const { userId } = req.params;
   const db = readDb();
   const list = db.throws
@@ -204,7 +207,7 @@ app.get('/api/throws/:userId', (req, res) => {
 });
 
 // Real-Time SSE Stream
-app.get('/api/throws/stream/:userId', (req, res) => {
+apiRouter.get('/throws/stream/:userId', (req, res) => {
   const { userId } = req.params;
 
   res.setHeader('Content-Type', 'text/event-stream');
@@ -227,7 +230,7 @@ app.get('/api/throws/stream/:userId', (req, res) => {
   });
 });
 
-app.post('/api/throws', (req, res) => {
+apiRouter.post('/throws', (req, res) => {
   const throwData = req.body;
   const { userId } = throwData;
   if (!userId) return res.status(400).json({ error: 'userId is required' });
@@ -250,7 +253,7 @@ app.post('/api/throws', (req, res) => {
   res.json(newThrow);
 });
 
-app.put('/api/throws/:id', (req, res) => {
+apiRouter.put('/throws/:id', (req, res) => {
   const { id } = req.params;
   const updates = req.body;
 
@@ -268,7 +271,7 @@ app.put('/api/throws/:id', (req, res) => {
   res.status(404).json({ error: 'Throw not found' });
 });
 
-app.delete('/api/throws/:id', (req, res) => {
+apiRouter.delete('/throws/:id', (req, res) => {
   const { id } = req.params;
   const db = readDb();
   db.throws = db.throws || [];
@@ -297,7 +300,7 @@ app.delete('/api/throws/:id', (req, res) => {
 });
 
 // --- IMAGE UPLOAD API ---
-app.post('/api/photos/upload', upload.single('photo'), (req, res) => {
+apiRouter.post('/photos/upload', upload.single('photo'), (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
 
   const { stageLabel } = req.body;
@@ -312,6 +315,9 @@ app.post('/api/photos/upload', upload.single('photo'), (req, res) => {
     timestamp: new Date().toISOString()
   });
 });
+
+// Mount the API router to handle both /api and /centrd/api routes
+app.use(['/api', '/centrd/api'], apiRouter);
 
 // Serve compiled React frontend built assets in production
 const DIST_DIR = path.join(__dirname, '../dist');
