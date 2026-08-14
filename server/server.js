@@ -317,7 +317,8 @@ apiRouter.post('/photos/upload', upload.single('photo'), (req, res) => {
 });
 
 // Mount the API router to handle both /api and /centrd/api routes
-app.use(['/api', '/centrd/api'], apiRouter);
+app.use('/api', apiRouter);
+app.use('/centrd/api', apiRouter);
 
 // Serve compiled React frontend built assets in production
 const DIST_DIR = path.join(__dirname, '../dist');
