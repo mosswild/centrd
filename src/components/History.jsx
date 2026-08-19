@@ -3,6 +3,7 @@ import { updateThrowLog, uploadThrowPhoto, deleteThrowLog } from '../db';
 import { Calendar, Trash2, Tag, Camera, Filter, Search, Image as ImageIcon, AlertCircle } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import PostItNotesStack from './PostItNotesStack';
+import ImageLightboxModal from './ImageLightboxModal';
 import { getNotesArray, formatNotesSummary, isSameStage, getAvailableStages } from '../utils/noteUtils';
 
 export default function History({ throws, settings, user }) {
@@ -11,6 +12,9 @@ export default function History({ throws, settings, user }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [cardStages, setCardStages] = useState({}); // { [throwId]: 'all' | 'Leather Hard' | ... }
   
+  // Image Lightbox Modal state
+  const [lightboxState, setLightboxState] = useState({ isOpen: false, photos: [], index: 0 });
+
   // Gallery upload states
   const [targetThrowId, setTargetThrowId] = useState(null);
   const [stageLabel, setStageLabel] = useState('Leather Hard');
@@ -384,7 +388,20 @@ export default function History({ throws, settings, user }) {
                       {displayPhotos && displayPhotos.length > 0 ? (
                         <div style={{ display: 'flex', gap: '0.5rem', overflowX: 'auto', paddingBottom: '0.4rem' }}>
                           {displayPhotos.map((photo, pIdx) => (
-                            <div key={photo.id || pIdx} style={{ position: 'relative', flex: '0 0 120px', height: '120px', borderRadius: '12px', overflow: 'hidden', border: '1px solid var(--border-color)' }}>
+                            <div
+                              key={photo.id || pIdx}
+                              onClick={() => setLightboxState({ isOpen: true, photos: displayPhotos, index: pIdx })}
+                              style={{
+                                position: 'relative',
+                                flex: '0 0 120px',
+                                height: '120px',
+                                borderRadius: '12px',
+                                overflow: 'hidden',
+                                border: '1px solid var(--border-color)',
+                                cursor: 'pointer'
+                              }}
+                              title="Click to view expanded image"
+                            >
                               <img src={photo.url} alt={`Stage ${photo.stage}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                               <span style={{
                                 position: 'absolute',
@@ -496,6 +513,15 @@ export default function History({ throws, settings, user }) {
             })}
           </div>
         </div>
+      )}
+
+      {/* Lightbox Expanded Image Viewer Modal */}
+      {lightboxState.isOpen && (
+        <ImageLightboxModal
+          photos={lightboxState.photos}
+          initialIndex={lightboxState.index}
+          onClose={() => setLightboxState({ isOpen: false, photos: [], index: 0 })}
+        />
       )}
     </div>
   );

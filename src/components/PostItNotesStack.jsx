@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { StickyNote, Plus, Layers, Edit3, Trash2, X, Check, Calendar, Camera } from 'lucide-react';
 import { getNotesArray, getPostItColor, getMatchingStagePhotos, isSameStage, getAvailableStages } from '../utils/noteUtils';
+import ImageLightboxModal from './ImageLightboxModal';
 
 export default function PostItNotesStack({ throwItem, onUpdateNotes, activeStage = 'all', readOnly = false, settings = null }) {
   const allNotes = getNotesArray(throwItem);
@@ -18,6 +19,9 @@ export default function PostItNotesStack({ throwItem, onUpdateNotes, activeStage
   const [formText, setFormText] = useState('');
   const [formStage, setFormStage] = useState(activeStage !== 'all' ? activeStage : 'Wet Clay');
   const [customStage, setCustomStage] = useState('');
+  
+  // Image Lightbox Modal state
+  const [lightboxState, setLightboxState] = useState({ isOpen: false, photos: [], index: 0 });
 
   // Fixed set of subtle rotations for organic post-it look
   const angles = [-2.5, 2, -1.8, 3.2, -3, 1.5, -2, 2.8];
@@ -291,7 +295,19 @@ export default function PostItNotesStack({ throwItem, onUpdateNotes, activeStage
                           key={p.id || pI}
                           src={p.url}
                           alt={`${selectedNote.stage} photo`}
-                          style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.15)' }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setLightboxState({ isOpen: true, photos: stagePhotos, index: pI });
+                          }}
+                          style={{
+                            width: '80px',
+                            height: '80px',
+                            objectFit: 'cover',
+                            borderRadius: '8px',
+                            border: '1px solid rgba(0,0,0,0.15)',
+                            cursor: 'pointer'
+                          }}
+                          title="Click to view expanded image"
                         />
                       ))}
                     </div>
@@ -523,6 +539,15 @@ export default function PostItNotesStack({ throwItem, onUpdateNotes, activeStage
             </form>
           </div>
         </div>
+      )}
+
+      {/* Lightbox Expanded Image Viewer Modal */}
+      {lightboxState.isOpen && (
+        <ImageLightboxModal
+          photos={lightboxState.photos}
+          initialIndex={lightboxState.index}
+          onClose={() => setLightboxState({ isOpen: false, photos: [], index: 0 })}
+        />
       )}
     </div>
   );
