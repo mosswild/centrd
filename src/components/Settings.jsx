@@ -671,69 +671,75 @@ export default function Settings({ settings, throws = [], user, onSettingsUpdate
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             {weightCategories.map((cat, idx) => (
-              <div key={cat.id || idx} style={{
-                display: 'grid',
-                gridTemplateColumns: '2.5fr 1.2fr 40px 1.5fr 30px',
-                gap: '0.75rem',
-                alignItems: 'center',
-                background: 'var(--bg-secondary)',
-                padding: '0.75rem',
-                borderRadius: '16px',
-                border: '1px solid var(--border-color)'
-              }}>
-                <div>
+              <div key={cat.id || idx} className="weight-class-row">
+                <div className="weight-class-name-col">
+                  <label style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: 600, display: 'block', marginBottom: '0.2rem' }}>
+                    Class Name
+                  </label>
                   <input
                     type="text"
                     placeholder="Name"
                     value={cat.name}
                     onChange={(e) => handleCategoryChange(idx, 'name', e.target.value)}
-                    style={{ fontSize: '0.85rem', padding: '0.4rem 0.6rem' }}
+                    style={{ fontSize: '0.85rem', padding: '0.45rem 0.65rem' }}
                   />
                 </div>
 
-                <div>
-                  <input
-                    type="number"
-                    step="1"
-                    min="1"
-                    placeholder="Weight"
-                    value={cat.weight}
-                    onChange={(e) => handleCategoryChange(idx, 'weight', e.target.value === '' ? '' : Math.round(Number(e.target.value)))}
-                    style={{ fontSize: '0.85rem', padding: '0.4rem 0.6rem' }}
-                  />
+                <div className="weight-class-weight-col">
+                  <label style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: 600, display: 'block', marginBottom: '0.2rem' }}>
+                    Weight
+                  </label>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                    <input
+                      type="number"
+                      step="1"
+                      min="1"
+                      placeholder="Weight"
+                      value={cat.weight}
+                      onChange={(e) => handleCategoryChange(idx, 'weight', e.target.value === '' ? '' : Math.round(Number(e.target.value)))}
+                      style={{ fontSize: '0.85rem', padding: '0.45rem 0.65rem', flex: 1 }}
+                    />
+                    <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 600, flexShrink: 0 }}>
+                      {globalUnit}
+                    </span>
+                  </div>
                 </div>
 
-                <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', fontWeight: 600, paddingLeft: '0.25rem' }}>
-                  {globalUnit}
-                </div>
-
-                <div>
+                <div className="weight-class-count-col">
+                  <label style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: 600, display: 'block', marginBottom: '0.2rem' }}>
+                    Target Count
+                  </label>
                   <input
                     type="number"
-                    placeholder="Target Count"
+                    placeholder="Count"
                     value={cat.targetCount}
                     onChange={(e) => handleCategoryChange(idx, 'targetCount', e.target.value)}
-                    style={{ fontSize: '0.85rem', padding: '0.4rem 0.6rem' }}
+                    style={{ fontSize: '0.85rem', padding: '0.45rem 0.65rem' }}
                   />
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => handleRemoveCategory(idx)}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    color: 'var(--text-secondary)',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}
-                  onMouseEnter={(e) => e.target.style.color = 'var(--collapse)'}
-                  onMouseLeave={(e) => e.target.style.color = 'var(--text-secondary)'}
-                >
-                  <Trash2 size={16} />
-                </button>
+                <div className="weight-class-delete-col" style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveCategory(idx)}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: 'var(--text-secondary)',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: '0.4rem',
+                      marginTop: '0.8rem'
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.color = 'var(--collapse)'}
+                    onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-secondary)'}
+                    title="Remove Weight Class"
+                  >
+                    <Trash2 size={18} />
+                  </button>
+                </div>
               </div>
             ))}
             {weightCategories.length === 0 && (
@@ -741,6 +747,61 @@ export default function Settings({ settings, throws = [], user, onSettingsUpdate
                 No weight categories defined. Please add at least one category.
               </p>
             )}
+          </div>
+        </div>
+
+        {/* Challenge Settings Import / Export Card */}
+        <div className="glass" style={{
+          padding: '1.5rem',
+          borderRadius: '20px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '1rem'
+        }}>
+          <div>
+            <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--terracotta)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Challenge Backup
+            </span>
+            <h4 style={{ fontWeight: 700, fontSize: '1.05rem', marginTop: '0.15rem' }}>
+              Challenge Configuration JSON
+            </h4>
+            <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>
+              Export or import your throwing challenge goals, weight classes, and schedule targets as a JSON file.
+            </p>
+          </div>
+          <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
+            <button
+              type="button"
+              onClick={handleExportJSON}
+              className="btn btn-secondary"
+              style={{ padding: '0.5rem 1rem', fontSize: '0.82rem' }}
+            >
+              <Download size={15} />
+              Export Challenge Settings
+            </button>
+            <label
+              className="btn btn-secondary"
+              style={{
+                margin: 0,
+                padding: '0.5rem 1rem',
+                fontSize: '0.82rem',
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+            >
+              <Upload size={15} />
+              Import Challenge Settings
+              <input
+                type="file"
+                accept=".json"
+                onChange={handleImportJSON}
+                style={{ display: 'none' }}
+              />
+            </label>
           </div>
         </div>
 
@@ -944,22 +1005,6 @@ export default function Settings({ settings, throws = [], user, onSettingsUpdate
           <button type="submit" className="btn btn-primary" style={{ flex: 1, padding: '0.9rem' }}>
             Save Configuration
           </button>
-          
-          <button type="button" onClick={handleExportJSON} className="btn btn-secondary" style={{ padding: '0.9rem' }}>
-            <Download size={18} />
-            Export Settings
-          </button>
-          
-          <label className="btn btn-secondary" style={{ margin: 0, padding: '0.9rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Upload size={18} />
-            Import Settings
-            <input
-              type="file"
-              accept=".json"
-              onChange={handleImportJSON}
-              style={{ display: 'none' }}
-            />
-          </label>
         </div>
 
         {/* Backup & Restore ZIP Log */}
