@@ -18,9 +18,32 @@ export async function importChallengeFromZip(zipFile, activeUserId, onProgress) 
     throw new Error("Invalid backup schema inside JSON file.");
   }
   
-  // 1. Save settings under current active potter profile
+  // 1. Save settings under current active potter profile, merging any unique imported stage names
+  const existingSettings = settings || {};
+  const backupStages = existingSettings.potteryStages || ['Wet Clay', 'Trimmed', 'Glaze Application', 'Fired'];
+  const mergedStages = [...backupStages];
+
+  // Collect any unique stage names present across imported throws, photos, and notes
+  (throws || []).forEach(t => {
+    if (t.photos) {
+      t.photos.forEach(p => {
+        if (p.stage && !mergedStages.includes(p.stage)) {
+          mergedStages.push(p.stage);
+        }
+      });
+    }
+    if (t.notesArray) {
+      t.notesArray.forEach(n => {
+        if (n.stage && !mergedStages.includes(n.stage)) {
+          mergedStages.push(n.stage);
+        }
+      });
+    }
+  });
+
   const importedSettings = {
-    ...settings,
+    ...existingSettings,
+    potteryStages: mergedStages,
     userId: activeUserId
   };
   await saveSettings(activeUserId, importedSettings);
