@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import ReactDOM from 'react-dom';
 import { X, ChevronLeft, ChevronRight, Camera, Trash2 } from 'lucide-react';
 
 export default function ImageLightboxModal({ photos = [], initialIndex = 0, onClose, onDeletePhoto, availableStages = [], onUpdatePhotoStage }) {
@@ -42,19 +43,20 @@ export default function ImageLightboxModal({ photos = [], initialIndex = 0, onCl
   const currentUrl = typeof rawPhoto === 'string' ? rawPhoto : (rawPhoto.url || rawPhoto.photoUrl || rawPhoto.src || '');
   const currentStage = typeof rawPhoto === 'string' ? 'Photo' : (rawPhoto.stage || 'Photo');
 
-  return (
+  return ReactDOM.createPortal(
     <div
       style={{
         position: 'fixed',
         top: 0, left: 0, right: 0, bottom: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.92)',
-        backdropFilter: 'blur(12px)',
-        zIndex: 10000,
+        backgroundColor: 'rgba(0, 0, 0, 0.94)',
+        backdropFilter: 'blur(16px)',
+        WebkitBackdropFilter: 'blur(16px)',
+        zIndex: 999999,
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: '1.25rem',
+        padding: 'calc(1.25rem + env(safe-area-inset-top, 0px)) 1rem calc(1.25rem + env(safe-area-inset-bottom, 0px)) 1rem',
         animation: 'fadeIn 0.2s ease-out'
       }}
       onClick={onClose}
@@ -68,7 +70,9 @@ export default function ImageLightboxModal({ photos = [], initialIndex = 0, onCl
           justifyContent: 'space-between',
           alignItems: 'center',
           color: '#ffffff',
-          zIndex: 10001
+          zIndex: 1000000,
+          gap: '0.5rem',
+          flexWrap: 'wrap'
         }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -310,6 +314,7 @@ export default function ImageLightboxModal({ photos = [], initialIndex = 0, onCl
           })}
         </div>
       )}
-    </div>
+    </div>,
+    document.body
   );
 }
