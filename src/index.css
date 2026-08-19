@@ -222,27 +222,32 @@ label.btn {
   scroll-snap-type: x mandatory;
   scrollbar-width: none; /* Firefox */
   -ms-overflow-style: none; /* IE 10+ */
-  gap: 1.5rem;
-  padding: 1rem 0;
+  gap: 1rem;
+  padding: 0.5rem 0;
   width: 100%;
+  box-sizing: border-box;
 }
 .swipe-container::-webkit-scrollbar {
   display: none; /* WebKit */
 }
 
 .swipe-card {
-  flex: 0 0 85%;
-  max-width: 420px;
+  flex: 0 0 100%;
+  max-width: 100%;
+  box-sizing: border-box;
   scroll-snap-align: center;
   scroll-snap-stop: always;
-  border-radius: 24px;
-  padding: 1.5rem;
+  border-radius: 20px;
+  padding: 1.15rem;
   transition: var(--transition-smooth);
 }
 
 @media (min-width: 640px) {
   .swipe-card {
     flex: 0 0 60%;
+    max-width: 420px;
+    padding: 1.5rem;
+    border-radius: 24px;
   }
 }
 
@@ -321,7 +326,14 @@ label.btn {
   width: 100%;
   max-width: 1200px;
   margin: 0 auto;
-  padding: 1.5rem;
+  padding: 1rem 0.75rem;
+  box-sizing: border-box;
+}
+
+@media (min-width: 640px) {
+  .content-area {
+    padding: 1.5rem;
+  }
 }
 
 @media (min-width: 768px) {
