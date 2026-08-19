@@ -140,3 +140,13 @@ Open **`http://localhost:5173/centrd/`** in your browser. Any requests to `/cent
 * All databases are stored in the server directory under `server/data/db.json`.
 * All photo uploads are saved inside `server/uploads/`.
 * Both of these paths are ignored by Git (configured in `server/.gitignore`), ensuring your private clay diary records and studio photos are **never** committed or uploaded online.
+
+---
+
+## 📄 License
+
+This project is licensed under the **Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International (CC BY-NC-SA 4.0)** license.
+
+* **Free for Personal Use**: Anyone is free to use, modify, share, and self-host this software for personal, educational, or studio use.
+* **Non-Commercial**: Commercial use, selling copies of this software, monetizing derivative works, or profiting from its distribution is strictly prohibited.
+* **ShareAlike**: Any derivative works or modifications must be distributed under the exact same non-commercial license.
