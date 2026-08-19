@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { saveSettings, signOutUser, remapThrowStages, wipeApplicationData, updateProfile } from '../db';
+import { saveSettings, signOutUser, remapThrowStages, updateProfile, deleteProfile } from '../db';
 import { Settings as SettingsIcon, LogOut, Download, Upload, Plus, Trash2, Loader2, ArrowUp, ArrowDown, Edit2, Check, X } from 'lucide-react';
 import { importChallengeFromZip } from '../utils/importer';
 
-const AVATAR_OPTIONS = ["🍯", "🏺", "🍵", "🧱", "🎨", "⚱️", "🌻", "🌊", "🌿", "☕", "🕯️"];
+const AVATAR_OPTIONS = ["🍯", "🏺", "🍵", "🧱", "🎨", "⚱️", "🌻", "🌊", "🌿", "☕", "🕯️", "🪵"];
 
 export default function Settings({ settings, throws = [], user, onSettingsUpdate }) {
   // Potter Profile State
@@ -303,18 +303,6 @@ export default function Settings({ settings, throws = [], user, onSettingsUpdate
     } finally {
       setImportingZip(false);
       e.target.value = '';
-    }
-  };
-
-  const handleResetDatabase = async () => {
-    if (window.confirm("Are you sure you want to WIPE all profiles, throwing logs, and settings? This action is permanent and cannot be undone.")) {
-      try {
-        await wipeApplicationData();
-        window.location.reload();
-      } catch (err) {
-        console.error(err);
-        alert("Failed to reset application data: " + (err.message || 'Unknown error'));
-      }
     }
   };
 
@@ -1020,7 +1008,7 @@ export default function Settings({ settings, throws = [], user, onSettingsUpdate
           gap: '1rem'
         }}>
           <div>
-            <h4 style={{ fontWeight: 700, fontSize: '0.95rem' }}>Backup & Restore Journal</h4>
+            <h4 style={{ fontWeight: 700, fontSize: '0.95rem' }}>Restore Journal</h4>
             <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
               Restore settings, throw history, and clay stage photos from a previously exported Centrd ZIP log.
             </p>
@@ -1057,7 +1045,7 @@ export default function Settings({ settings, throws = [], user, onSettingsUpdate
           </div>
         </div>
 
-        {/* Database Connection Reset */}
+        {/* Delete Current Potter Profile */}
         <div className="glass" style={{
           marginTop: '2rem',
           padding: '1.5rem',
@@ -1070,19 +1058,39 @@ export default function Settings({ settings, throws = [], user, onSettingsUpdate
           gap: '1rem'
         }}>
           <div>
-            <h4 style={{ fontWeight: 700, color: 'var(--collapse)', fontSize: '0.95rem' }}>Clear Local Storage</h4>
-            <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-              Wipe all potter profiles, settings, logs, and photos stored on this browser.
+            <h4 style={{ fontWeight: 700, color: 'var(--collapse)', fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <Trash2 size={16} />
+              Delete Potter Profile
+            </h4>
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.15rem' }}>
+              Permanently delete your potter profile, settings, throwing logs, and photos. Other potter profiles will remain safe.
             </p>
           </div>
-          <button type="button" onClick={handleResetDatabase} className="btn btn-secondary" style={{
-            color: 'var(--collapse)',
-            borderColor: 'rgba(184, 76, 54, 0.3)',
-            background: 'none',
-            fontSize: '0.8rem',
-            padding: '0.5rem 1rem'
-          }}>
-            Wipe Application Data
+          <button
+            type="button"
+            onClick={async () => {
+              const confirmMsg = `Are you sure you want to delete profile "${user.name}"?\n\nAll your settings, throwing logs, notes, and photos will be permanently deleted. Other potter profiles will remain safe. This cannot be undone.`;
+              if (window.confirm(confirmMsg)) {
+                try {
+                  await deleteProfile(user.id);
+                  await signOutUser();
+                  window.location.reload();
+                } catch (err) {
+                  console.error(err);
+                  alert("Failed to delete potter profile: " + (err.message || 'Unknown error'));
+                }
+              }
+            }}
+            className="btn btn-secondary"
+            style={{
+              color: 'var(--collapse)',
+              borderColor: 'rgba(184, 76, 54, 0.4)',
+              background: 'rgba(184, 76, 54, 0.08)',
+              fontSize: '0.8rem',
+              padding: '0.5rem 1rem'
+            }}
+          >
+            Delete Profile
           </button>
         </div>
 

@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { getProfiles, createProfile, deleteProfile, signInProfile } from '../db';
-import { Flame, Plus, Trash2, ArrowLeft, Brush } from 'lucide-react';
+import { getProfiles, createProfile, deleteProfile, signInProfile, wipeApplicationData } from '../db';
+import { Flame, Plus, Trash2, ArrowLeft } from 'lucide-react';
 
-const AVATARS = ["🍯", "🏺", "🍵", "🧱", "🎨", "⚱️", "🌻", "🌊"];
+const AVATARS = ["🍯", "🏺", "🍵", "🧱", "🎨", "⚱️", "🌻", "🌊", "🌿", "☕", "🕯️", "🪵"];
 
 export default function Auth() {
   const [profiles, setProfiles] = useState([]);
@@ -33,7 +33,6 @@ export default function Auth() {
 
     try {
       const newProfile = await createProfile(trimmedName, studio.trim(), avatar);
-      // Automatically log in to the newly created profile
       signInProfile(newProfile);
     } catch (err) {
       console.error(err);
@@ -42,7 +41,7 @@ export default function Auth() {
   };
 
   const handleDelete = async (e, profileId, profileName) => {
-    e.stopPropagation(); // prevent signing in when clicking delete
+    e.stopPropagation();
     const confirmDelete = window.confirm(
       `Are you sure you want to delete the profile "${profileName}"? This will permanently wipe all logs and settings for this profile from the server.`
     );
@@ -62,7 +61,6 @@ export default function Auth() {
     signInProfile(profile);
   };
 
-  // Show profile creation screen if there are no profiles yet or the user clicked "Add Potter"
   if (profiles.length === 0 || isCreating) {
     return (
       <div className="auth-screen animate-fade-in" style={{
@@ -123,87 +121,101 @@ export default function Auth() {
           {error && (
             <div style={{
               background: 'rgba(184, 76, 54, 0.1)',
-              border: '1px dashed var(--collapse)',
               color: 'var(--collapse)',
-              padding: '0.75rem 1rem',
+              padding: '0.6rem 1rem',
               borderRadius: '12px',
-              fontSize: '0.9rem',
-              marginBottom: '1.25rem',
-              textAlign: 'left'
+              fontSize: '0.85rem',
+              marginBottom: '1rem'
             }}>
               {error}
             </div>
           )}
 
-          <form onSubmit={handleCreate} style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem', textAlign: 'left' }}>
-            {/* Avatar Selector */}
+          <form onSubmit={handleCreate} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
             <div>
-              <label>Select Avatar Stamp</label>
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(4, 1fr)',
-                gap: '0.5rem',
-                marginTop: '0.4rem',
-                marginBottom: '0.5rem'
-              }}>
-                {AVATARS.map(emoji => {
-                  const active = avatar === emoji;
-                  return (
-                    <button
-                      key={emoji}
-                      type="button"
-                      onClick={() => setAvatar(emoji)}
-                      style={{
-                        fontSize: '1.6rem',
-                        padding: '0.5rem',
-                        background: active ? 'var(--terracotta-light)' : 'var(--bg-secondary)',
-                        border: '1px solid',
-                        borderColor: active ? 'var(--terracotta)' : 'var(--border-color)',
-                        borderRadius: '12px',
-                        cursor: 'pointer',
-                        transition: 'var(--transition-smooth)'
-                      }}
-                    >
-                      {emoji}
-                    </button>
-                  );
-                })}
+              <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', textAlign: 'left', marginBottom: '0.4rem' }}>
+                Potter Avatar
+              </label>
+              
+              <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', marginBottom: '0.75rem' }}>
+                <div style={{
+                  width: '3.5rem',
+                  height: '3.5rem',
+                  borderRadius: '18px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '2rem',
+                  background: 'var(--bg-secondary)',
+                  border: '2px solid var(--terracotta)',
+                  boxShadow: '0 8px 20px rgba(0, 0, 0, 0.08)',
+                  flexShrink: 0
+                }}>
+                  {avatar}
+                </div>
+
+                <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap', flex: 1, alignItems: 'center' }}>
+                  {AVATARS.map((emoji) => {
+                    const active = avatar === emoji;
+                    return (
+                      <button
+                        key={emoji}
+                        type="button"
+                        onClick={() => setAvatar(emoji)}
+                        style={{
+                          fontSize: '1.2rem',
+                          padding: '0.3rem 0.5rem',
+                          borderRadius: '12px',
+                          border: active ? '2px solid var(--terracotta)' : '1px solid var(--border-color)',
+                          background: active ? 'var(--terracotta-light)' : 'var(--bg-secondary)',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        {emoji}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
+
               <input
                 type="text"
-                placeholder="Or type/paste any emoji..."
+                placeholder="Or type/paste any custom emoji..."
                 value={avatar}
                 onChange={(e) => setAvatar(e.target.value)}
-                style={{ fontSize: '0.8rem', padding: '0.4rem 0.6rem', borderRadius: '12px' }}
+                style={{ fontSize: '0.8rem', padding: '0.4rem 0.6rem' }}
                 title="Type or paste any custom emoji from your keyboard"
               />
             </div>
 
             <div>
-              <label htmlFor="potterName">Potter Name</label>
-              <input
-                id="potterName"
-                type="text"
-                required
-                placeholder="e.g. Charlie"
+              <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', textAlign: 'left', marginBottom: '0.4rem' }}>
+                Potter Name
+              </label>
+              <input 
+                type="text" 
+                placeholder="e.g. Clara"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
+                required
+                autoFocus
               />
             </div>
 
             <div>
-              <label htmlFor="studioName">Studio Name (Optional)</label>
-              <input
-                id="studioName"
-                type="text"
-                placeholder="e.g. Clayworks Studio"
+              <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', textAlign: 'left', marginBottom: '0.4rem' }}>
+                Studio Name (Optional)
+              </label>
+              <input 
+                type="text" 
+                placeholder="e.g. Muddy Paws Ceramics"
                 value={studio}
                 onChange={(e) => setStudio(e.target.value)}
               />
             </div>
 
-            <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '0.5rem', padding: '0.85rem' }}>
-              Create & Begin Diary
+            <button type="submit" className="btn btn-primary" style={{ marginTop: '0.5rem', width: '100%' }}>
+              Create & Get Started
             </button>
           </form>
         </div>
@@ -211,7 +223,6 @@ export default function Auth() {
     );
   }
 
-  // Show profile list/selection screen if profile records exist
   return (
     <div className="auth-screen animate-fade-in" style={{
       display: 'flex',
@@ -222,38 +233,52 @@ export default function Auth() {
     }}>
       <div className="glass animate-pop-in" style={{
         width: '100%',
-        maxWidth: '540px',
+        maxWidth: '560px',
         padding: '2.5rem',
-        borderRadius: '24px',
-        textAlign: 'center'
+        borderRadius: '24px'
       }}>
-        <div style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          background: 'var(--terracotta-light)',
-          color: 'var(--terracotta)',
-          width: '64px',
-          height: '64px',
-          borderRadius: '20px',
-          marginBottom: '1.25rem'
-        }}>
-          <Flame size={32} strokeWidth={2.5} />
+        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+          <div style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'var(--terracotta-light)',
+            color: 'var(--terracotta)',
+            width: '64px',
+            height: '64px',
+            borderRadius: '20px',
+            marginBottom: '1rem'
+          }}>
+            <Flame size={32} strokeWidth={2.5} />
+          </div>
+
+          <h1 className="serif-title" style={{ fontSize: '2.2rem', marginBottom: '0.4rem', fontWeight: 700 }}>
+            Who is throwing today?
+          </h1>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem' }}>
+            Select your potter profile to access your logs and challenge goals.
+          </p>
         </div>
 
-        <h1 className="serif-title" style={{ fontSize: '2.4rem', marginBottom: '0.4rem', fontWeight: 700 }}>
-          Centrd
-        </h1>
-        <p style={{ color: 'var(--text-secondary)', marginBottom: '2.5rem', fontSize: '0.95rem' }}>
-          Select a profile or create a new one to open your throwing log.
-        </p>
+        {error && (
+          <div style={{
+            background: 'rgba(184, 76, 54, 0.1)',
+            color: 'var(--collapse)',
+            padding: '0.75rem 1rem',
+            borderRadius: '12px',
+            fontSize: '0.9rem',
+            marginBottom: '1.5rem',
+            textAlign: 'center'
+          }}>
+            {error}
+          </div>
+        )}
 
-        {/* Profiles Grid */}
         <div style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
           gap: '1.2rem',
-          marginBottom: '2rem'
+          marginBottom: '1rem'
         }}>
           {profiles.map(p => (
             <div
@@ -274,7 +299,6 @@ export default function Auth() {
                 background: 'var(--bg-secondary)'
               }}
             >
-              {/* Delete profile button */}
               <button
                 type="button"
                 onClick={(e) => handleDelete(e, p.id, p.name)}
@@ -315,7 +339,6 @@ export default function Auth() {
             </div>
           ))}
 
-          {/* Add Profile Card */}
           <div
             onClick={() => {
               setName('');
@@ -347,6 +370,37 @@ export default function Auth() {
             </span>
           </div>
         </div>
+
+        <div style={{ marginTop: '2rem', textAlign: 'center', borderTop: '1px solid var(--border-color)', paddingTop: '1.25rem' }}>
+          <button
+            type="button"
+            onClick={async () => {
+              if (window.confirm("Are you sure you want to WIPE all profiles, throwing logs, settings, and photos? This action is permanent and cannot be undone.")) {
+                try {
+                  await wipeApplicationData();
+                  window.location.reload();
+                } catch (err) {
+                  console.error(err);
+                  alert("Failed to reset application data: " + (err.message || 'Unknown error'));
+                }
+              }
+            }}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: 'var(--text-secondary)',
+              fontSize: '0.78rem',
+              cursor: 'pointer',
+              textDecoration: 'underline',
+              opacity: 0.7
+            }}
+            onMouseEnter={(e) => e.target.style.color = 'var(--collapse)'}
+            onMouseLeave={(e) => e.target.style.color = 'var(--text-secondary)'}
+          >
+            Reset Server & Wipe Application Data
+          </button>
+        </div>
+
       </div>
     </div>
   );
