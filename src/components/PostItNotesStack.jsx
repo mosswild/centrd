@@ -41,6 +41,29 @@ export default function PostItNotesStack({ throwItem, onUpdateNotes, activeStage
     }
   };
 
+  const handleUpdatePhotoStage = async (photoId, newStage) => {
+    try {
+      const updatedPhotos = (photos || []).map(p => {
+        if (p.id === photoId) {
+          return { ...p, stage: newStage };
+        }
+        return p;
+      });
+      await updateThrowLog(throwItem.id, { photos: updatedPhotos });
+      setLightboxState(prev => {
+        if (!prev.isOpen) return prev;
+        const newPhotos = (prev.photos || []).map(p => {
+          if (p.id === photoId) return { ...p, stage: newStage };
+          return p;
+        });
+        return { ...prev, photos: newPhotos };
+      });
+    } catch (err) {
+      console.error(err);
+      alert("Failed to update photo stage: " + err.message);
+    }
+  };
+
   // Fixed set of subtle rotations for organic post-it look
   const angles = [-2.5, 2, -1.8, 3.2, -3, 1.5, -2, 2.8];
 
@@ -566,6 +589,8 @@ export default function PostItNotesStack({ throwItem, onUpdateNotes, activeStage
           initialIndex={lightboxState.index}
           onClose={() => setLightboxState({ isOpen: false, photos: [], index: 0 })}
           onDeletePhoto={(photo) => handleDeletePhoto(photo.id)}
+          availableStages={settings?.potteryStages || ['Wet Clay', 'Trimmed', 'Glaze Application', 'Fired']}
+          onUpdatePhotoStage={(photo, newStage) => handleUpdatePhotoStage(photo.id, newStage)}
         />
       )}
     </div>
