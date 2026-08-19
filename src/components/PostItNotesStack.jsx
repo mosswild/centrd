@@ -23,6 +23,24 @@ export default function PostItNotesStack({ throwItem, onUpdateNotes, activeStage
   // Image Lightbox Modal state
   const [lightboxState, setLightboxState] = useState({ isOpen: false, photos: [], index: 0 });
 
+  const handleDeletePhoto = async (photoId) => {
+    if (!window.confirm("Are you sure you want to delete this photo?")) return;
+    try {
+      const updatedPhotos = (photos || []).filter(p => p.id !== photoId);
+      await updateThrowLog(throwItem.id, { photos: updatedPhotos });
+      setLightboxState(prev => {
+        if (!prev.isOpen) return prev;
+        const newPhotos = (prev.photos || []).filter(p => p.id !== photoId);
+        if (newPhotos.length === 0) return { isOpen: false, photos: [], index: 0 };
+        const newIndex = Math.min(prev.index, newPhotos.length - 1);
+        return { ...prev, photos: newPhotos, index: newIndex };
+      });
+    } catch (err) {
+      console.error(err);
+      alert("Failed to delete photo: " + err.message);
+    }
+  };
+
   // Fixed set of subtle rotations for organic post-it look
   const angles = [-2.5, 2, -1.8, 3.2, -3, 1.5, -2, 2.8];
 
@@ -547,6 +565,7 @@ export default function PostItNotesStack({ throwItem, onUpdateNotes, activeStage
           photos={lightboxState.photos}
           initialIndex={lightboxState.index}
           onClose={() => setLightboxState({ isOpen: false, photos: [], index: 0 })}
+          onDeletePhoto={(photo) => handleDeletePhoto(photo.id)}
         />
       )}
     </div>

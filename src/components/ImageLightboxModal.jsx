@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { X, ChevronLeft, ChevronRight, Camera } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Camera, Trash2 } from 'lucide-react';
 
-export default function ImageLightboxModal({ photos = [], initialIndex = 0, onClose }) {
+export default function ImageLightboxModal({ photos = [], initialIndex = 0, onClose, onDeletePhoto, availableStages = [], onUpdatePhotoStage }) {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
 
   useEffect(() => {
@@ -34,13 +34,21 @@ export default function ImageLightboxModal({ photos = [], initialIndex = 0, onCl
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentIndex, photos.length, onClose]);
 
+  if (!photos || photos.length === 0) return null;
+
+  const rawPhoto = photos[currentIndex] || photos[0];
+  if (!rawPhoto) return null;
+
+  const currentUrl = typeof rawPhoto === 'string' ? rawPhoto : (rawPhoto.url || rawPhoto.photoUrl || rawPhoto.src || '');
+  const currentStage = typeof rawPhoto === 'string' ? 'Photo' : (rawPhoto.stage || 'Photo');
+
   return (
     <div
       style={{
         position: 'fixed',
         top: 0, left: 0, right: 0, bottom: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.9)',
-        backdropFilter: 'blur(10px)',
+        backgroundColor: 'rgba(0, 0, 0, 0.92)',
+        backdropFilter: 'blur(12px)',
         zIndex: 10000,
         display: 'flex',
         flexDirection: 'column',
@@ -65,19 +73,48 @@ export default function ImageLightboxModal({ photos = [], initialIndex = 0, onCl
         onClick={(e) => e.stopPropagation()}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <span
-            style={{
-              background: 'var(--terracotta)',
-              color: '#ffffff',
-              fontSize: '0.75rem',
-              fontWeight: 700,
-              padding: '0.25rem 0.65rem',
-              borderRadius: '100px',
-              letterSpacing: '0.03em'
-            }}
-          >
-            {currentPhoto.stage || 'Photo'}
-          </span>
+          {availableStages && availableStages.length > 0 && onUpdatePhotoStage ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+              <span style={{ fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.7)', fontWeight: 600 }}>Stage:</span>
+              <select
+                value={currentStage}
+                onChange={(e) => onUpdatePhotoStage(rawPhoto, e.target.value, currentIndex)}
+                style={{
+                  background: 'var(--terracotta)',
+                  color: '#ffffff',
+                  fontSize: '0.75rem',
+                  fontWeight: 700,
+                  padding: '0.25rem 0.65rem',
+                  borderRadius: '100px',
+                  border: '1px solid rgba(255, 255, 255, 0.3)',
+                  cursor: 'pointer',
+                  outline: 'none',
+                  letterSpacing: '0.03em'
+                }}
+                title="Click to change photo stage"
+              >
+                {availableStages.map(st => (
+                  <option key={st} value={st} style={{ background: '#2c2826', color: '#ffffff' }}>
+                    {st}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ) : (
+            <span
+              style={{
+                background: 'var(--terracotta)',
+                color: '#ffffff',
+                fontSize: '0.75rem',
+                fontWeight: 700,
+                padding: '0.25rem 0.65rem',
+                borderRadius: '100px',
+                letterSpacing: '0.03em'
+              }}
+            >
+              {currentStage}
+            </span>
+          )}
 
           <span style={{ fontSize: '0.85rem', color: 'rgba(255, 255, 255, 0.75)', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
             <Camera size={14} />
@@ -85,28 +122,62 @@ export default function ImageLightboxModal({ photos = [], initialIndex = 0, onCl
           </span>
         </div>
 
-        <button
-          type="button"
-          onClick={onClose}
-          style={{
-            background: 'rgba(255, 255, 255, 0.15)',
-            border: 'none',
-            color: '#ffffff',
-            borderRadius: '50%',
-            width: '40px',
-            height: '40px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            cursor: 'pointer',
-            transition: 'all 0.2s ease'
-          }}
-          onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.3)'}
-          onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)'}
-          title="Close (Esc)"
-        >
-          <X size={22} />
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          {onDeletePhoto && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDeletePhoto(rawPhoto, currentIndex);
+              }}
+              style={{
+                background: 'rgba(184, 76, 54, 0.35)',
+                border: '1px solid rgba(184, 76, 54, 0.6)',
+                color: '#ff9e8b',
+                borderRadius: '100px',
+                padding: '0.4rem 0.85rem',
+                fontSize: '0.8rem',
+                fontWeight: 600,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.35rem',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(184, 76, 54, 0.6)'}
+              onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(184, 76, 54, 0.35)'}
+              title="Delete Photo"
+            >
+              <Trash2 size={15} /> Delete Photo
+            </button>
+          )}
+
+          <button
+            type="button"
+            onClick={onClose}
+            style={{
+              background: 'rgba(255, 255, 255, 0.25)',
+              border: '1px solid rgba(255, 255, 255, 0.4)',
+              color: '#ffffff',
+              borderRadius: '50%',
+              width: '40px',
+              height: '40px',
+              padding: 0,
+              flexShrink: 0,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
+              transition: 'all 0.2s ease'
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.4)'}
+            onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.25)'}
+            title="Close (Esc)"
+          >
+            <X size={22} />
+          </button>
+        </div>
       </div>
 
       {/* Main Center Image Display with Navigation Arrows */}
@@ -130,23 +201,25 @@ export default function ImageLightboxModal({ photos = [], initialIndex = 0, onCl
             onClick={handlePrev}
             style={{
               position: 'absolute',
-              left: '0.5rem',
+              left: '0.75rem',
               zIndex: 10002,
-              background: 'rgba(0, 0, 0, 0.5)',
-              border: '1px solid rgba(255, 255, 255, 0.2)',
+              background: 'rgba(0, 0, 0, 0.75)',
+              border: '1px solid rgba(255, 255, 255, 0.35)',
               color: '#ffffff',
               borderRadius: '50%',
               width: '48px',
               height: '48px',
+              padding: 0,
+              flexShrink: 0,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               cursor: 'pointer',
-              boxShadow: '0 4px 15px rgba(0,0,0,0.4)',
+              boxShadow: '0 6px 20px rgba(0,0,0,0.6)',
               transition: 'all 0.2s ease'
             }}
-            onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(0, 0, 0, 0.8)'}
-            onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(0, 0, 0, 0.5)'}
+            onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(0, 0, 0, 0.95)'}
+            onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(0, 0, 0, 0.75)'}
             title="Previous Image (Left Arrow)"
           >
             <ChevronLeft size={28} />
@@ -155,8 +228,8 @@ export default function ImageLightboxModal({ photos = [], initialIndex = 0, onCl
 
         {/* Expanded Image */}
         <img
-          src={currentPhoto.url}
-          alt={`Stage ${currentPhoto.stage}`}
+          src={currentUrl}
+          alt={`Stage ${currentStage}`}
           style={{
             maxWidth: '90vw',
             maxHeight: '75vh',
@@ -174,23 +247,25 @@ export default function ImageLightboxModal({ photos = [], initialIndex = 0, onCl
             onClick={handleNext}
             style={{
               position: 'absolute',
-              right: '0.5rem',
+              right: '0.75rem',
               zIndex: 10002,
-              background: 'rgba(0, 0, 0, 0.5)',
-              border: '1px solid rgba(255, 255, 255, 0.2)',
+              background: 'rgba(0, 0, 0, 0.75)',
+              border: '1px solid rgba(255, 255, 255, 0.35)',
               color: '#ffffff',
               borderRadius: '50%',
               width: '48px',
               height: '48px',
+              padding: 0,
+              flexShrink: 0,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               cursor: 'pointer',
-              boxShadow: '0 4px 15px rgba(0,0,0,0.4)',
+              boxShadow: '0 6px 20px rgba(0,0,0,0.6)',
               transition: 'all 0.2s ease'
             }}
-            onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(0, 0, 0, 0.8)'}
-            onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(0, 0, 0, 0.5)'}
+            onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(0, 0, 0, 0.95)'}
+            onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(0, 0, 0, 0.75)'}
             title="Next Image (Right Arrow)"
           >
             <ChevronRight size={28} />
@@ -213,10 +288,11 @@ export default function ImageLightboxModal({ photos = [], initialIndex = 0, onCl
         >
           {photos.map((p, idx) => {
             const isSelected = idx === currentIndex;
+            const thumbUrl = typeof p === 'string' ? p : (p.url || p.photoUrl || p.src || '');
             return (
               <img
                 key={p.id || idx}
-                src={p.url}
+                src={thumbUrl}
                 alt={`Thumbnail ${idx + 1}`}
                 onClick={() => setCurrentIndex(idx)}
                 style={{

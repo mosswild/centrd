@@ -271,12 +271,15 @@ export default function LogThrow({ settings, user, onNavigateToHistory }) {
                   type="button"
                   onClick={() => setStatus(item.id)}
                   style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
                     background: active ? item.color : 'var(--bg-secondary)',
                     color: active ? '#fff' : 'var(--text-primary)',
                     border: '1px solid',
                     borderColor: active ? item.color : 'var(--border-color)',
                     padding: '0.75rem 0.5rem',
-                    flexDirection: 'column',
                     borderRadius: '16px',
                     height: '70px',
                     lineHeight: '1.2'

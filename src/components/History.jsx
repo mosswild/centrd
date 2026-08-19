@@ -13,11 +13,56 @@ export default function History({ throws, settings, user }) {
   const [cardStages, setCardStages] = useState({}); // { [throwId]: 'all' | 'Leather Hard' | ... }
   
   // Image Lightbox Modal state
-  const [lightboxState, setLightboxState] = useState({ isOpen: false, photos: [], index: 0 });
+  const [lightboxState, setLightboxState] = useState({ isOpen: false, photos: [], index: 0, throwId: null, allPhotos: [] });
+
+  const firstStage = settings?.potteryStages?.[0] || 'Wet Clay';
+
+  const handleDeletePhoto = async (throwId, photoId, currentPhotos, e) => {
+    if (e && e.stopPropagation) e.stopPropagation();
+    if (!window.confirm("Are you sure you want to delete this photo?")) return;
+    try {
+      const updatedPhotos = (currentPhotos || []).filter(p => p.id !== photoId);
+      await updateThrowLog(throwId, { photos: updatedPhotos });
+      setLightboxState(prev => {
+        if (!prev.isOpen) return prev;
+        const newPhotos = (prev.photos || []).filter(p => p.id !== photoId);
+        if (newPhotos.length === 0) return { isOpen: false, photos: [], index: 0, throwId: null, allPhotos: [] };
+        const newIndex = Math.min(prev.index, newPhotos.length - 1);
+        return { ...prev, photos: newPhotos, index: newIndex };
+      });
+    } catch (err) {
+      console.error(err);
+      alert("Failed to delete photo: " + err.message);
+    }
+  };
+
+  const handleUpdatePhotoStage = async (throwId, photoId, newStage, currentPhotos, e) => {
+    if (e && e.stopPropagation) e.stopPropagation();
+    try {
+      const updatedPhotos = (currentPhotos || []).map(p => {
+        if (p.id === photoId) {
+          return { ...p, stage: newStage };
+        }
+        return p;
+      });
+      await updateThrowLog(throwId, { photos: updatedPhotos });
+      setLightboxState(prev => {
+        if (!prev.isOpen) return prev;
+        const newPhotos = (prev.photos || []).map(p => {
+          if (p.id === photoId) return { ...p, stage: newStage };
+          return p;
+        });
+        return { ...prev, photos: newPhotos };
+      });
+    } catch (err) {
+      console.error(err);
+      alert("Failed to update photo stage: " + err.message);
+    }
+  };
 
   // Gallery upload states
   const [targetThrowId, setTargetThrowId] = useState(null);
-  const [stageLabel, setStageLabel] = useState('Leather Hard');
+  const [stageLabel, setStageLabel] = useState(firstStage);
   const [customLabel, setCustomLabel] = useState('');
   const [loading, setLoading] = useState(false);
   const [uploadError, setUploadError] = useState('');
@@ -86,7 +131,7 @@ export default function History({ throws, settings, user }) {
     });
   };
 
-  const handleAddPhotoClick = (throwId, defaultStage = 'Leather Hard') => {
+  const handleAddPhotoClick = (throwId, defaultStage = firstStage) => {
     setTargetThrowId(throwId);
     if (targetThrowId !== throwId || !stageLabel) {
       setStageLabel(defaultStage);
@@ -390,7 +435,7 @@ export default function History({ throws, settings, user }) {
                           {displayPhotos.map((photo, pIdx) => (
                             <div
                               key={photo.id || pIdx}
-                              onClick={() => setLightboxState({ isOpen: true, photos: displayPhotos, index: pIdx })}
+                              onClick={() => setLightboxState({ isOpen: true, photos: displayPhotos, index: pIdx, throwId: item.id, allPhotos: item.photos })}
                               style={{
                                 position: 'relative',
                                 flex: '0 0 120px',
@@ -403,19 +448,45 @@ export default function History({ throws, settings, user }) {
                               title="Click to view expanded image"
                             >
                               <img src={photo.url} alt={`Stage ${photo.stage}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                              
                               <span style={{
                                 position: 'absolute',
                                 bottom: '4px', left: '4px',
-                                background: 'rgba(0,0,0,0.6)',
-                                backdropFilter: 'blur(2px)',
-                                color: 'white',
+                                background: 'rgba(0, 0, 0, 0.65)',
+                                backdropFilter: 'blur(3px)',
+                                color: '#ffffff',
                                 fontSize: '0.65rem',
-                                padding: '0.1rem 0.35rem',
+                                padding: '0.12rem 0.4rem',
                                 borderRadius: '4px',
                                 fontWeight: 600
                               }}>
                                 {photo.stage}
                               </span>
+
+                              <button
+                                type="button"
+                                onClick={(e) => handleDeletePhoto(item.id, photo.id, item.photos, e)}
+                                style={{
+                                  position: 'absolute',
+                                  top: '4px', right: '4px',
+                                  background: 'rgba(184, 76, 54, 0.85)',
+                                  backdropFilter: 'blur(2px)',
+                                  color: 'white',
+                                  border: 'none',
+                                  borderRadius: '50%',
+                                  width: '24px', height: '24px',
+                                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                  cursor: 'pointer',
+                                  opacity: 0.85,
+                                  boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
+                                  transition: 'all 0.2s ease'
+                                }}
+                                onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
+                                onMouseLeave={(e) => e.currentTarget.style.opacity = '0.85'}
+                                title="Delete photo"
+                              >
+                                <Trash2 size={13} />
+                              </button>
                             </div>
                           ))}
                         </div>
@@ -449,7 +520,7 @@ export default function History({ throws, settings, user }) {
                       </span>
                       <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                         <select
-                          value={targetThrowId === item.id ? stageLabel : (activeStage !== 'all' ? activeStage : 'Leather Hard')}
+                          value={targetThrowId === item.id ? stageLabel : (activeStage !== 'all' ? activeStage : firstStage)}
                           onChange={(e) => {
                             setTargetThrowId(item.id);
                             setStageLabel(e.target.value);
@@ -465,7 +536,7 @@ export default function History({ throws, settings, user }) {
                         <button
                           type="button"
                           onClick={() => {
-                            const currentDefault = (targetThrowId === item.id && stageLabel) ? stageLabel : (activeStage !== 'all' ? activeStage : 'Leather Hard');
+                            const currentDefault = (targetThrowId === item.id && stageLabel) ? stageLabel : (activeStage !== 'all' ? activeStage : firstStage);
                             handleAddPhotoClick(item.id, currentDefault);
                           }}
                           className="btn btn-celadon"
@@ -520,7 +591,18 @@ export default function History({ throws, settings, user }) {
         <ImageLightboxModal
           photos={lightboxState.photos}
           initialIndex={lightboxState.index}
-          onClose={() => setLightboxState({ isOpen: false, photos: [], index: 0 })}
+          onClose={() => setLightboxState({ isOpen: false, photos: [], index: 0, throwId: null, allPhotos: [] })}
+          onDeletePhoto={(photo) => {
+            if (lightboxState.throwId) {
+              handleDeletePhoto(lightboxState.throwId, photo.id, lightboxState.allPhotos || lightboxState.photos);
+            }
+          }}
+          availableStages={settings?.potteryStages || ['Wet Clay', 'Trimmed', 'Glaze Application', 'Fired']}
+          onUpdatePhotoStage={(photo, newStage) => {
+            if (lightboxState.throwId) {
+              handleUpdatePhotoStage(lightboxState.throwId, photo.id, newStage, lightboxState.allPhotos || lightboxState.photos);
+            }
+          }}
         />
       )}
     </div>

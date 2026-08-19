@@ -8,8 +8,8 @@ import History from './components/History';
 import Settings from './components/Settings';
 
 import { 
-  LayoutDashboard, Flame, History as HistoryIcon, Settings as SettingsIcon, 
-  Sun, Moon, Download, LogOut, Loader2, PlusCircle 
+  Flame, History as HistoryIcon, Settings as SettingsIcon, 
+  Sun, Moon, Download, Loader2, PlusCircle 
 } from 'lucide-react';
 
 const LOADING_MESSAGES = [
@@ -199,25 +199,33 @@ export default function App() {
         borderRadius: '0 24px 24px 0',
         borderLeft: 'none'
       }}>
-        {/* Logo */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          background: 'var(--terracotta)',
-          color: 'white',
-          width: '42px',
-          height: '42px',
-          borderRadius: '12px',
-          marginBottom: '3rem'
-        }}>
-          <Flame size={20} />
-        </div>
+        {/* Logo / Home Button */}
+        <button
+          type="button"
+          onClick={() => setCurrentView('dashboard')}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'var(--terracotta)',
+            color: 'white',
+            width: '44px',
+            height: '44px',
+            borderRadius: '12px',
+            border: 'none',
+            cursor: 'pointer',
+            marginBottom: '3rem',
+            boxShadow: '0 4px 14px rgba(201, 111, 83, 0.4)',
+            transition: 'transform 0.2s ease'
+          }}
+          title="Dashboard / Home"
+        >
+          <Flame size={22} />
+        </button>
 
         {/* Tab Items */}
         <nav style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', flex: 1 }}>
           {[
-            { id: 'dashboard', icon: <LayoutDashboard size={20} />, label: 'Dashboard' },
             { id: 'log', icon: <PlusCircle size={20} />, label: 'Log Throw' },
             { id: 'history', icon: <HistoryIcon size={20} />, label: 'History' },
             { id: 'settings', icon: <SettingsIcon size={20} />, label: 'Settings' }
@@ -287,10 +295,23 @@ export default function App() {
         zIndex: 90,
         borderWidth: '0 0 1px 0'
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <Flame size={18} style={{ color: 'var(--terracotta)' }} />
-          <span className="serif-title" style={{ fontWeight: 700, fontSize: '1.15rem' }}>Centrd</span>
-        </div>
+        <button
+          type="button"
+          onClick={() => setCurrentView('dashboard')}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            padding: 0
+          }}
+          title="Dashboard / Home"
+        >
+          <Flame size={20} style={{ color: 'var(--terracotta)' }} />
+          <span className="serif-title" style={{ fontWeight: 700, fontSize: '1.15rem', color: 'var(--text-primary)' }}>Centrd</span>
+        </button>
         
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           {/* Export Zip */}
@@ -338,7 +359,6 @@ export default function App() {
         borderWidth: '1px 0 0 0'
       }}>
         {[
-          { id: 'dashboard', icon: <LayoutDashboard size={20} />, label: 'Stats' },
           { id: 'log', icon: <PlusCircle size={20} />, label: 'Log' },
           { id: 'history', icon: <HistoryIcon size={20} />, label: 'History' },
           { id: 'settings', icon: <SettingsIcon size={20} />, label: 'Settings' }
