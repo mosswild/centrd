@@ -132,12 +132,24 @@ export default function LogThrow({ settings, user, onNavigateToHistory }) {
     }
 
     try {
+      const initialNoteText = notes.trim();
+      const initialNotesArray = initialNoteText ? [
+        {
+          id: `note_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
+          text: initialNoteText,
+          stage: 'Wet Clay',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        }
+      ] : [];
+
       const throwData = {
         dateThrown,
         weightClass: matchedClass,
         weightValue: parsedWeight,
         status,
-        notes: notes.trim(),
+        notes: initialNoteText,
+        notesArray: initialNotesArray,
         photos: []
       };
 

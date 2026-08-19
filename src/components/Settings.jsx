@@ -1,9 +1,18 @@
 import React, { useState } from 'react';
-import { saveSettings, signOutUser } from '../db';
-import { Settings as SettingsIcon, LogOut, Download, Upload, Plus, Trash2, Loader2 } from 'lucide-react';
+import { saveSettings, signOutUser, remapThrowStages, wipeApplicationData, updateProfile } from '../db';
+import { Settings as SettingsIcon, LogOut, Download, Upload, Plus, Trash2, Loader2, ArrowUp, ArrowDown, Edit2, Check, X } from 'lucide-react';
 import { importChallengeFromZip } from '../utils/importer';
 
-export default function Settings({ settings, user, onSettingsUpdate }) {
+const AVATAR_OPTIONS = ["🍯", "🏺", "🍵", "🧱", "🎨", "⚱️", "🌻", "🌊", "🌿", "☕", "🕯️"];
+
+export default function Settings({ settings, throws = [], user, onSettingsUpdate }) {
+  // Potter Profile State
+  const [profileName, setProfileName] = useState(user.name || '');
+  const [profileStudio, setProfileStudio] = useState(user.studio || '');
+  const [profileAvatar, setProfileAvatar] = useState(user.avatar || '🍯');
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [profileSuccess, setProfileSuccess] = useState(false);
+
   const [targetCylinders, setTargetCylinders] = useState(settings.targetCylinders || 200);
   const [scheduleType, setScheduleType] = useState(settings.scheduleType || (settings.hasTimeLimit ? 'deadline' : 'none'));
   const [startDate, setStartDate] = useState(settings.startDate || new Date().toISOString().split('T')[0]);
@@ -12,6 +21,20 @@ export default function Settings({ settings, user, onSettingsUpdate }) {
   const [cadencePeriod, setCadencePeriod] = useState(settings.cadencePeriod || 'week');
   const [weightCategories, setWeightCategories] = useState(settings.weightCategories || []);
   const [globalUnit, setGlobalUnit] = useState(settings.globalUnit || 'lb');
+
+  // Pottery Stages State
+  const [potteryStages, setPotteryStages] = useState(
+    settings.potteryStages || ['Wet Clay', 'Trimmed', 'Glaze Application', 'Fired']
+  );
+  const [newStageInput, setNewStageInput] = useState('');
+  const [editingStageIdx, setEditingStageIdx] = useState(null);
+  const [editingStageValue, setEditingStageValue] = useState('');
+
+  // Remap / Delete Modal State
+  const [deleteModalStage, setDeleteModalStage] = useState(null);
+  const [remapTarget, setRemapTarget] = useState('');
+  const [remapping, setRemapping] = useState(false);
+
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
   const [importingZip, setImportingZip] = useState(false);
@@ -59,6 +82,106 @@ export default function Settings({ settings, user, onSettingsUpdate }) {
     setTargetCylinders(updated.reduce((sum, cat) => sum + (cat.targetCount || 0), 0));
   };
 
+  // --- Pottery Stage Operations ---
+  const handleMoveStage = (idx, direction) => {
+    const updated = [...potteryStages];
+    const targetIdx = idx + direction;
+    if (targetIdx < 0 || targetIdx >= updated.length) return;
+    const temp = updated[idx];
+    updated[idx] = updated[targetIdx];
+    updated[targetIdx] = temp;
+    setPotteryStages(updated);
+  };
+
+  const handleAddStage = () => {
+    const val = newStageInput.trim();
+    if (!val) return;
+    if (potteryStages.some(s => s.toLowerCase() === val.toLowerCase())) {
+      alert('This stage name already exists!');
+      return;
+    }
+    setPotteryStages([...potteryStages, val]);
+    setNewStageInput('');
+  };
+
+  const handleStartEditStage = (idx) => {
+    setEditingStageIdx(idx);
+    setEditingStageValue(potteryStages[idx]);
+  };
+
+  const handleSaveEditStage = async (idx) => {
+    const oldStage = potteryStages[idx];
+    const newStage = editingStageValue.trim();
+    if (!newStage) {
+      setEditingStageIdx(null);
+      return;
+    }
+
+    if (oldStage !== newStage) {
+      try {
+        setRemapping(true);
+        // Batch remap existing photos & notes across throws
+        await remapThrowStages(user.id, oldStage, newStage, throws);
+        const updated = [...potteryStages];
+        updated[idx] = newStage;
+        setPotteryStages(updated);
+      } catch (err) {
+        console.error(err);
+        alert('Failed to remap existing throw logs for this stage.');
+      } finally {
+        setRemapping(false);
+      }
+    }
+    setEditingStageIdx(null);
+  };
+
+  const handleOpenDeleteStageModal = (st) => {
+    const remaining = potteryStages.filter(s => s !== st);
+    if (remaining.length === 0) {
+      alert('You must keep at least one pottery stage!');
+      return;
+    }
+    setDeleteModalStage(st);
+    setRemapTarget(remaining[0]);
+  };
+
+  const handleConfirmDeleteStage = async () => {
+    if (!deleteModalStage || !remapTarget) return;
+
+    try {
+      setRemapping(true);
+      // Batch remap existing entries to selected remapTarget
+      await remapThrowStages(user.id, deleteModalStage, remapTarget, throws);
+
+      const updated = potteryStages.filter(s => s !== deleteModalStage);
+      setPotteryStages(updated);
+
+      // Auto-save settings
+      const updatedSettings = {
+        userId: user.id,
+        targetCylinders,
+        hasTimeLimit: scheduleType === 'deadline',
+        scheduleType,
+        startDate,
+        endDate: scheduleType === 'deadline' ? endDate : '',
+        cadenceFrequency: Number(cadenceFrequency),
+        cadencePeriod,
+        weightCategories,
+        globalUnit,
+        potteryStages: updated
+      };
+      await saveSettings(user.id, updatedSettings);
+      if (onSettingsUpdate) onSettingsUpdate(updatedSettings);
+
+      setDeleteModalStage(null);
+    } catch (err) {
+      console.error(err);
+      alert('Failed to remap and remove stage.');
+    } finally {
+      setRemapping(false);
+    }
+  };
+
   const handleSave = async (e) => {
     e.preventDefault();
     setSuccess(false);
@@ -84,7 +207,8 @@ export default function Settings({ settings, user, onSettingsUpdate }) {
           weight: Math.round(Number(cat.weight)) || 1,
           unit: globalUnit
         })),
-        globalUnit
+        globalUnit,
+        potteryStages
       };
 
       await saveSettings(user.id, updatedSettings);
@@ -182,11 +306,35 @@ export default function Settings({ settings, user, onSettingsUpdate }) {
     }
   };
 
-  const handleResetDatabase = () => {
-    if (window.confirm("Are you sure you want to WIPE all profiles, throwing logs, and settings from this browser? This action is permanent and cannot be undone.")) {
-      indexedDB.deleteDatabase("throwing_log_local_db");
-      localStorage.clear();
-      window.location.reload();
+  const handleResetDatabase = async () => {
+    if (window.confirm("Are you sure you want to WIPE all profiles, throwing logs, and settings? This action is permanent and cannot be undone.")) {
+      try {
+        await wipeApplicationData();
+        window.location.reload();
+      } catch (err) {
+        console.error(err);
+        alert("Failed to reset application data: " + (err.message || 'Unknown error'));
+      }
+    }
+  };
+
+  const handleSaveProfile = async (e) => {
+    e.preventDefault();
+    setProfileSaving(true);
+    setProfileSuccess(false);
+    try {
+      await updateProfile(user.id, {
+        name: profileName.trim(),
+        studio: profileStudio.trim(),
+        avatar: profileAvatar
+      });
+      setProfileSuccess(true);
+      setTimeout(() => setProfileSuccess(false), 3000);
+    } catch (err) {
+      console.error(err);
+      alert('Failed to update profile: ' + err.message);
+    } finally {
+      setProfileSaving(false);
     }
   };
 
@@ -207,6 +355,131 @@ export default function Settings({ settings, user, onSettingsUpdate }) {
           <LogOut size={16} />
           Sign Out
         </button>
+      </div>
+
+      {/* Potter Profile & Avatar Card */}
+      <div className="glass" style={{ padding: '1.5rem', borderRadius: '20px', marginBottom: '2rem' }}>
+        <div style={{ marginBottom: '1.25rem' }}>
+          <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--terracotta)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            Potter Profile
+          </span>
+          <h3 style={{ fontSize: '1.2rem', fontWeight: 700, marginTop: '0.1rem' }}>
+            Avatar & Profile Info
+          </h3>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '0.25rem' }}>
+            Change your potter avatar stamp, name, and studio details.
+          </p>
+        </div>
+
+        <form onSubmit={handleSaveProfile} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+          {/* Avatar Selector Grid */}
+          <div>
+            <label style={{ fontSize: '0.8rem', fontWeight: 600, display: 'block', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>
+              Select Avatar Stamp
+            </label>
+            <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+              {/* Active Avatar Badge Preview */}
+              <div
+                style={{
+                  width: '3.5rem',
+                  height: '3.5rem',
+                  borderRadius: '18px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '2rem',
+                  background: 'var(--bg-secondary)',
+                  border: '2px solid var(--terracotta)',
+                  boxShadow: '0 8px 20px rgba(0, 0, 0, 0.08)',
+                  flexShrink: 0
+                }}
+              >
+                {profileAvatar}
+              </div>
+
+              {/* Emoji Options & Custom Input */}
+              <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', flex: 1, alignItems: 'center' }}>
+                {AVATAR_OPTIONS.map((emoji) => {
+                  const active = profileAvatar === emoji;
+                  return (
+                    <button
+                      key={emoji}
+                      type="button"
+                      onClick={() => setProfileAvatar(emoji)}
+                      style={{
+                        fontSize: '1.3rem',
+                        padding: '0.35rem 0.55rem',
+                        borderRadius: '12px',
+                        border: active ? '2px solid var(--terracotta)' : '1px solid var(--border-color)',
+                        background: active ? 'var(--terracotta-light)' : 'var(--bg-secondary)',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease'
+                      }}
+                    >
+                      {emoji}
+                    </button>
+                  );
+                })}
+                <input
+                  type="text"
+                  placeholder="Or type/paste any emoji..."
+                  value={profileAvatar}
+                  onChange={(e) => setProfileAvatar(e.target.value)}
+                  style={{
+                    width: '170px',
+                    fontSize: '0.8rem',
+                    padding: '0.35rem 0.6rem',
+                    borderRadius: '12px'
+                  }}
+                  title="Type or paste any custom emoji from your keyboard"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Name & Studio Inputs */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+            <div>
+              <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Potter Name</label>
+              <input
+                type="text"
+                value={profileName}
+                onChange={(e) => setProfileName(e.target.value)}
+                placeholder="e.g. Clara"
+                required
+                style={{ marginTop: '0.25rem' }}
+              />
+            </div>
+
+            <div>
+              <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Studio Name (Optional)</label>
+              <input
+                type="text"
+                value={profileStudio}
+                onChange={(e) => setProfileStudio(e.target.value)}
+                placeholder="e.g. Muddy Paws Ceramics"
+                style={{ marginTop: '0.25rem' }}
+              />
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center', gap: '1rem' }}>
+            <button
+              type="submit"
+              className="btn btn-primary"
+              style={{ padding: '0.6rem 1.25rem', fontSize: '0.85rem' }}
+              disabled={profileSaving || !profileName.trim()}
+            >
+              {profileSaving ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
+              Save Profile & Avatar
+            </button>
+            {profileSuccess && (
+              <span style={{ fontSize: '0.82rem', color: 'var(--success)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                <Check size={14} /> Profile updated!
+              </span>
+            )}
+          </div>
+        </form>
       </div>
 
       {success && (
@@ -471,6 +744,201 @@ export default function Settings({ settings, user, onSettingsUpdate }) {
           </div>
         </div>
 
+        {/* Pottery Stages Manager Card */}
+        <div className="glass" style={{ padding: '1.5rem', borderRadius: '20px', marginBottom: '2rem' }}>
+          <div style={{ marginBottom: '1.25rem' }}>
+            <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--terracotta)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Lifecycle Config
+            </span>
+            <h3 style={{ fontSize: '1.2rem', fontWeight: 700, marginTop: '0.1rem' }}>
+              Pottery Stages Manager
+            </h3>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '0.25rem' }}>
+              Customize, reorder, or remove pottery stages. When deleting or renaming a stage, existing notes and photos are automatically remapped!
+            </p>
+          </div>
+
+          {/* Add New Stage Bar */}
+          <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.25rem' }}>
+            <input
+              type="text"
+              placeholder="e.g. Underglaze, Carving, Sanded..."
+              value={newStageInput}
+              onChange={(e) => setNewStageInput(e.target.value)}
+              style={{ flex: 1, fontSize: '0.85rem', padding: '0.5rem 0.8rem' }}
+              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddStage(); } }}
+            />
+            <button
+              type="button"
+              onClick={handleAddStage}
+              className="btn btn-celadon"
+              style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }}
+              disabled={!newStageInput.trim()}
+            >
+              <Plus size={15} /> Add Stage
+            </button>
+          </div>
+
+          {/* List of Configured Stages */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            {potteryStages.map((st, idx) => (
+              <div
+                key={st + '_' + idx}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.6rem',
+                  background: 'var(--bg-secondary)',
+                  padding: '0.6rem 0.85rem',
+                  borderRadius: '12px',
+                  border: '1px solid var(--border-color)'
+                }}
+              >
+                {/* Move buttons */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  <button
+                    type="button"
+                    onClick={() => handleMoveStage(idx, -1)}
+                    disabled={idx === 0}
+                    style={{ background: 'none', border: 'none', padding: 0, opacity: idx === 0 ? 0.3 : 0.7, cursor: idx === 0 ? 'default' : 'pointer' }}
+                  >
+                    <ArrowUp size={13} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleMoveStage(idx, 1)}
+                    disabled={idx === potteryStages.length - 1}
+                    style={{ background: 'none', border: 'none', padding: 0, opacity: idx === potteryStages.length - 1 ? 0.3 : 0.7, cursor: idx === potteryStages.length - 1 ? 'default' : 'pointer' }}
+                  >
+                    <ArrowDown size={13} />
+                  </button>
+                </div>
+
+                {/* Stage Name / Inline Edit */}
+                {editingStageIdx === idx ? (
+                  <div style={{ display: 'flex', gap: '0.4rem', flex: 1, alignItems: 'center' }}>
+                    <input
+                      type="text"
+                      value={editingStageValue}
+                      onChange={(e) => setEditingStageValue(e.target.value)}
+                      style={{ fontSize: '0.85rem', padding: '0.35rem 0.6rem', flex: 1 }}
+                      autoFocus
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleSaveEditStage(idx)}
+                      className="btn btn-primary"
+                      style={{ padding: '0.35rem 0.7rem', fontSize: '0.8rem' }}
+                      disabled={remapping}
+                    >
+                      {remapping ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} />} Save
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEditingStageIdx(null)}
+                      className="btn btn-secondary"
+                      style={{ padding: '0.35rem 0.6rem', fontSize: '0.8rem' }}
+                    >
+                      <X size={13} />
+                    </button>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flex: 1 }}>
+                    <span style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                      {st}
+                    </span>
+                    <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+                      <button
+                        type="button"
+                        onClick={() => handleStartEditStage(idx)}
+                        style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: '0.2rem' }}
+                        title="Rename Stage"
+                      >
+                        <Edit2 size={14} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleOpenDeleteStageModal(st)}
+                        style={{ background: 'none', border: 'none', color: 'var(--collapse)', cursor: 'pointer', padding: '0.2rem' }}
+                        title="Remove Stage"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Remap Stage Modal on Delete */}
+        {deleteModalStage && (
+          <div className="postit-modal-backdrop" onClick={() => setDeleteModalStage(null)}>
+            <div
+              className="glass"
+              style={{
+                width: '100%',
+                maxWidth: '460px',
+                borderRadius: '20px',
+                padding: '1.75rem',
+                boxShadow: '0 20px 50px rgba(0,0,0,0.35)',
+                background: 'var(--bg-primary)'
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--collapse)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <Trash2 size={18} />
+                  Remove Stage: "{deleteModalStage}"
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setDeleteModalStage(null)}
+                  style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', marginBottom: '1.25rem', lineHeight: '1.45' }}>
+                Removing this stage requires remapping any existing photos and sticky notes associated with <strong>"{deleteModalStage}"</strong>. Select the stage to move them to:
+              </p>
+
+              <label style={{ marginBottom: '0.4rem' }}>Target Remap Stage:</label>
+              <select
+                value={remapTarget}
+                onChange={(e) => setRemapTarget(e.target.value)}
+                style={{ marginBottom: '1.5rem' }}
+              >
+                {potteryStages.filter(s => s !== deleteModalStage).map(st => (
+                  <option key={st} value={st}>{st}</option>
+                ))}
+              </select>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
+                <button
+                  type="button"
+                  onClick={() => setDeleteModalStage(null)}
+                  className="btn btn-secondary"
+                  disabled={remapping}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmDeleteStage}
+                  className="btn btn-primary"
+                  style={{ background: 'var(--collapse)' }}
+                  disabled={remapping}
+                >
+                  {remapping ? <Loader2 size={16} className="animate-spin" /> : 'Remap & Remove Stage'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Action Controls */}
         <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
           <button type="submit" className="btn btn-primary" style={{ flex: 1, padding: '0.9rem' }}>
@@ -479,12 +947,12 @@ export default function Settings({ settings, user, onSettingsUpdate }) {
           
           <button type="button" onClick={handleExportJSON} className="btn btn-secondary" style={{ padding: '0.9rem' }}>
             <Download size={18} />
-            Export settings
+            Export Settings
           </button>
           
           <label className="btn btn-secondary" style={{ margin: 0, padding: '0.9rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
             <Upload size={18} />
-            Import settings
+            Import Settings
             <input
               type="file"
               accept=".json"

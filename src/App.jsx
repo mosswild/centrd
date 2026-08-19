@@ -88,6 +88,7 @@ export default function App() {
               scheduleType: "none",
               cadenceFrequency: 3,
               cadencePeriod: "week",
+              potteryStages: ['Wet Clay', 'Trimmed', 'Glaze Application', 'Fired'],
               weightCategories: [
                 { id: "1lb", name: "1 lb Cylinder", weight: 1, unit: "lb", targetCount: 100 },
                 { id: "2lb", name: "2 lb Cylinder", weight: 2, unit: "lb", targetCount: 50 },
@@ -177,7 +178,7 @@ export default function App() {
       case 'history':
         return <History throws={throws} settings={settings} user={user} />;
       case 'settings':
-        return <Settings settings={settings} user={user} onSettingsUpdate={setSettings} />;
+        return <Settings settings={settings} throws={throws} user={user} onSettingsUpdate={setSettings} />;
       default:
         return <Dashboard throws={throws} settings={settings} user={user} />;
     }

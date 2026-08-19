@@ -1,4 +1,5 @@
 import JSZip from 'jszip';
+import { getNotesArray, formatNotesSummary } from './noteUtils';
 
 // Helper to convert base64 DataURL or remote URL to binary data for the ZIP archive
 async function getImageData(url) {
@@ -65,7 +66,8 @@ export async function exportChallengeToZip(throws, settings) {
   chronologicalThrows.forEach((t, index) => {
     const category = settings.weightCategories.find(c => c.id === t.weightClass) || { name: t.weightClass };
     const actualWeight = t.weightValue !== undefined ? `${t.weightValue} ${settings.globalUnit || 'lb'}` : `${category.weight || ''} ${settings.globalUnit || 'lb'}`;
-    const notesCell = t.notes ? t.notes.replace(/\n/g, ' ') : '';
+    const notesSummary = formatNotesSummary(getNotesArray(t));
+    const notesCell = notesSummary ? notesSummary.replace(/\n/g, ' ') : '';
     const photoCount = t.photos ? t.photos.length : 0;
     md += `| ${index + 1} | ${t.dateThrown} | ${category.name} (${actualWeight}) | ${t.status || 'Successful'} | ${notesCell} | ${photoCount} photos |\n`;
   });
@@ -81,12 +83,22 @@ export async function exportChallengeToZip(throws, settings) {
     const t = chronologicalThrows[index];
     const category = settings.weightCategories.find(c => c.id === t.weightClass) || { name: t.weightClass };
     const actualWeight = t.weightValue !== undefined ? `${t.weightValue} ${settings.globalUnit || 'lb'}` : `${category.weight || ''} ${settings.globalUnit || 'lb'}`;
-    
+    const notesArray = getNotesArray(t);
+
     md += `### Cylinder #${index + 1} - ${t.dateThrown}\n`;
     md += `- **Weight Class:** ${category.name}\n`;
     md += `- **Logged Weight:** ${actualWeight}\n`;
     md += `- **Quality/Status:** ${t.status || 'Successful'}\n`;
-    md += `- **Notes:** ${t.notes || '*No notes recorded.*'}\n\n`;
+    
+    if (notesArray.length > 0) {
+      md += `- **Sticky Notes:**\n`;
+      notesArray.forEach(n => {
+        md += `  - *[Stage: ${n.stage || 'General'}]* ${n.text}\n`;
+      });
+      md += `\n`;
+    } else {
+      md += `- **Notes:** *No notes recorded.*\n\n`;
+    }
 
     const photosBackup = [];
 

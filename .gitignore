@@ -26,3 +26,4 @@ config/
 *.njsproj
 *.sln
 *.sw?
+*.code-workspace

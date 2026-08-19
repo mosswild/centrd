@@ -143,7 +143,8 @@ export default function Auth() {
                 display: 'grid',
                 gridTemplateColumns: 'repeat(4, 1fr)',
                 gap: '0.5rem',
-                marginTop: '0.4rem'
+                marginTop: '0.4rem',
+                marginBottom: '0.5rem'
               }}>
                 {AVATARS.map(emoji => {
                   const active = avatar === emoji;
@@ -168,6 +169,14 @@ export default function Auth() {
                   );
                 })}
               </div>
+              <input
+                type="text"
+                placeholder="Or type/paste any emoji..."
+                value={avatar}
+                onChange={(e) => setAvatar(e.target.value)}
+                style={{ fontSize: '0.8rem', padding: '0.4rem 0.6rem', borderRadius: '12px' }}
+                title="Type or paste any custom emoji from your keyboard"
+              />
             </div>
 
             <div>

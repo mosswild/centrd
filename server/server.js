@@ -108,6 +108,23 @@ apiRouter.post('/profiles', (req, res) => {
   res.json(newProfile);
 });
 
+apiRouter.put('/profiles/:id', (req, res) => {
+  const { id } = req.params;
+  const updates = req.body;
+
+  const db = readDb();
+  db.profiles = db.profiles || [];
+
+  const idx = db.profiles.findIndex(p => p.id === id);
+  if (idx !== -1) {
+    db.profiles[idx] = { ...db.profiles[idx], ...updates };
+    writeDb(db);
+    return res.json(db.profiles[idx]);
+  }
+
+  res.status(404).json({ error: 'Profile not found' });
+});
+
 apiRouter.delete('/profiles/:id', (req, res) => {
   const { id } = req.params;
   const db = readDb();
@@ -314,6 +331,36 @@ apiRouter.post('/photos/upload', upload.single('photo'), (req, res) => {
     stage: stageLabel || 'Thrown',
     timestamp: new Date().toISOString()
   });
+});
+
+// --- RESET / WIPE DATABASE API ---
+apiRouter.post('/reset', (req, res) => {
+  try {
+    const emptyDb = { profiles: [], settings: {}, throws: [] };
+    writeDb(emptyDb);
+
+    if (fs.existsSync(UPLOADS_DIR)) {
+      const files = fs.readdirSync(UPLOADS_DIR);
+      for (const file of files) {
+        if (file !== '.gitkeep') {
+          try {
+            fs.unlinkSync(path.join(UPLOADS_DIR, file));
+          } catch (e) {}
+        }
+      }
+    }
+
+    sseClients.forEach(c => {
+      try {
+        c.res.write(`data: ${JSON.stringify({ type: 'RESET', throws: [] })}\n\n`);
+      } catch (e) {}
+    });
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error("Failed to reset server data:", err);
+    res.status(500).json({ error: "Failed to reset server database" });
+  }
 });
 
 // Mount the API router to handle both /api and /centrd/api routes

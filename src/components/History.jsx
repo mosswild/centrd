@@ -1,12 +1,15 @@
 import React, { useState, useRef } from 'react';
 import { updateThrowLog, uploadThrowPhoto, deleteThrowLog } from '../db';
-import { Calendar, Trash2, Tag, Camera, Plus, Filter, Search, Image as ImageIcon, AlertCircle } from 'lucide-react';
+import { Calendar, Trash2, Tag, Camera, Filter, Search, Image as ImageIcon, AlertCircle } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import PostItNotesStack from './PostItNotesStack';
+import { getNotesArray, formatNotesSummary, isSameStage, getAvailableStages } from '../utils/noteUtils';
 
 export default function History({ throws, settings, user }) {
   const [selectedWeight, setSelectedWeight] = useState('all');
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [cardStages, setCardStages] = useState({}); // { [throwId]: 'all' | 'Leather Hard' | ... }
   
   // Gallery upload states
   const [targetThrowId, setTargetThrowId] = useState(null);
@@ -15,6 +18,19 @@ export default function History({ throws, settings, user }) {
   const [loading, setLoading] = useState(false);
   const [uploadError, setUploadError] = useState('');
   const fileInputRef = useRef(null);
+
+  const handleUpdateNotes = async (throwId, newNotesArray) => {
+    try {
+      const summaryText = formatNotesSummary(newNotesArray);
+      await updateThrowLog(throwId, {
+        notesArray: newNotesArray,
+        notes: summaryText
+      });
+    } catch (err) {
+      console.error("Failed to update notes:", err);
+      alert("Failed to save note changes.");
+    }
+  };
 
   // Compress image helper using HTML5 Canvas
   const compressImage = (file) => {
@@ -66,8 +82,11 @@ export default function History({ throws, settings, user }) {
     });
   };
 
-  const handleAddPhotoClick = (throwId) => {
+  const handleAddPhotoClick = (throwId, defaultStage = 'Leather Hard') => {
     setTargetThrowId(throwId);
+    if (targetThrowId !== throwId || !stageLabel) {
+      setStageLabel(defaultStage);
+    }
     setUploadError('');
     // Wait a frame and click the hidden file input
     setTimeout(() => {
@@ -139,10 +158,17 @@ export default function History({ throws, settings, user }) {
   const filteredThrows = throws.filter(t => {
     const matchesWeight = selectedWeight === 'all' || t.weightClass === selectedWeight;
     const matchesStatus = selectedStatus === 'all' || t.status === selectedStatus;
-    const matchesSearch = searchQuery === '' || 
-      (t.notes && t.notes.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (t.weightClass && t.weightClass.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (t.status && t.status.toLowerCase().includes(searchQuery.toLowerCase()));
+    const query = searchQuery.toLowerCase();
+    
+    const notesArr = getNotesArray(t);
+    const matchesNotes = query === '' ||
+      (t.notes && t.notes.toLowerCase().includes(query)) ||
+      notesArr.some(n => (n.text && n.text.toLowerCase().includes(query)) || (n.stage && n.stage.toLowerCase().includes(query)));
+
+    const matchesSearch = query === '' ||
+      matchesNotes ||
+      (t.weightClass && t.weightClass.toLowerCase().includes(query)) ||
+      (t.status && t.status.toLowerCase().includes(query));
     
     return matchesWeight && matchesStatus && matchesSearch;
   });
@@ -270,17 +296,24 @@ export default function History({ throws, settings, user }) {
           <div className="swipe-container">
             {filteredThrows.map((item) => {
               const category = settings.weightCategories.find(c => c.id === item.weightClass) || { name: item.weightClass };
-              
+              const activeStage = cardStages[item.id] || 'all';
+              const availableStages = getAvailableStages(item, throws, settings);
+
               let statusColor = 'var(--text-secondary)';
               if (item.status === 'Successful') statusColor = 'var(--success)';
               if (item.status === 'Failed' || item.status === 'Collapsed' || item.status === 'Discarded') statusColor = 'var(--collapse)';
               if (item.status === 'Flawed' || item.status === 'Trimmed') statusColor = 'var(--ochre)';
 
+              // Filter photos according to selected stage pill on card
+              const displayPhotos = activeStage === 'all'
+                ? (item.photos || [])
+                : (item.photos || []).filter(p => isSameStage(p.stage, activeStage));
+
               return (
-                <div key={item.id} className="swipe-card glass flex-col" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '480px' }}>
+                <div key={item.id} className="swipe-card glass flex-col" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '520px' }}>
                   <div>
                     {/* Top Row: Category and Date */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
                       <div>
                         <h3 className="serif-title" style={{ fontSize: '1.3rem', fontWeight: 700 }}>{category.name}</h3>
                         <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.1rem' }}>
@@ -305,11 +338,52 @@ export default function History({ throws, settings, user }) {
                       </span>
                     </div>
 
+                    {/* Stage Filter Pills Bar for Card */}
+                    <div style={{
+                      display: 'flex',
+                      gap: '0.3rem',
+                      overflowX: 'auto',
+                      marginBottom: '1rem',
+                      paddingBottom: '0.25rem',
+                      scrollbarWidth: 'none'
+                    }}>
+                      {['all', ...availableStages].map(st => {
+                        const isSelected = activeStage === st;
+                        return (
+                          <button
+                            key={st}
+                            type="button"
+                            onClick={() => {
+                              setCardStages(prev => ({ ...prev, [item.id]: st }));
+                              if (st !== 'all') {
+                                setTargetThrowId(item.id);
+                                setStageLabel(st);
+                              }
+                            }}
+                            style={{
+                              padding: '0.2rem 0.55rem',
+                              fontSize: '0.7rem',
+                              borderRadius: '100px',
+                              border: isSelected ? '1px solid var(--terracotta)' : '1px solid var(--border-color)',
+                              background: isSelected ? 'var(--terracotta)' : 'var(--bg-secondary)',
+                              color: isSelected ? '#ffffff' : 'var(--text-secondary)',
+                              fontWeight: isSelected ? 700 : 500,
+                              whiteSpace: 'nowrap',
+                              cursor: 'pointer',
+                              transition: 'all 0.2s ease'
+                            }}
+                          >
+                            {st === 'all' ? 'All Stages' : st}
+                          </button>
+                        );
+                      })}
+                    </div>
+
                     {/* Photos Gallery */}
                     <div style={{ marginBottom: '1.25rem' }}>
-                      {item.photos && item.photos.length > 0 ? (
+                      {displayPhotos && displayPhotos.length > 0 ? (
                         <div style={{ display: 'flex', gap: '0.5rem', overflowX: 'auto', paddingBottom: '0.4rem' }}>
-                          {item.photos.map((photo, pIdx) => (
+                          {displayPhotos.map((photo, pIdx) => (
                             <div key={photo.id || pIdx} style={{ position: 'relative', flex: '0 0 120px', height: '120px', borderRadius: '12px', overflow: 'hidden', border: '1px solid var(--border-color)' }}>
                               <img src={photo.url} alt={`Stage ${photo.stage}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                               <span style={{
@@ -330,7 +404,7 @@ export default function History({ throws, settings, user }) {
                         </div>
                       ) : (
                         <div style={{
-                          height: '120px',
+                          height: '100px',
                           borderRadius: '12px',
                           background: 'var(--bg-secondary)',
                           border: '1px dashed var(--border-color)',
@@ -338,9 +412,9 @@ export default function History({ throws, settings, user }) {
                           alignItems: 'center',
                           justifyContent: 'center',
                           color: 'var(--text-secondary)',
-                          fontSize: '0.85rem'
+                          fontSize: '0.82rem'
                         }}>
-                          No photo uploaded
+                          {activeStage === 'all' ? 'No photos uploaded yet' : `No photos for ${activeStage}`}
                         </div>
                       )}
                     </div>
@@ -354,29 +428,29 @@ export default function History({ throws, settings, user }) {
                       border: '1px solid var(--border-color)'
                     }}>
                       <span style={{ fontSize: '0.75rem', fontWeight: 600, display: 'block', marginBottom: '0.4rem', color: 'var(--text-secondary)' }}>
-                        Add Firing/Glaze Stage:
+                        Add Stage Photo:
                       </span>
                       <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                         <select
-                          value={targetThrowId === item.id ? stageLabel : 'Leather Hard'}
+                          value={targetThrowId === item.id ? stageLabel : (activeStage !== 'all' ? activeStage : 'Leather Hard')}
                           onChange={(e) => {
                             setTargetThrowId(item.id);
                             setStageLabel(e.target.value);
                           }}
                           style={{ padding: '0.35rem', fontSize: '0.8rem', borderRadius: '8px', flex: 1 }}
                         >
-                          <option value="Wet Clay">Wet Clay</option>
-                          <option value="Leather Hard">Leather Hard</option>
-                          <option value="Bone Dry">Bone Dry</option>
-                          <option value="Bisqueware">Bisqueware</option>
-                          <option value="Glazed">Glazed (Unfired)</option>
-                          <option value="Finished">Finished Glaze</option>
+                          {availableStages.map(st => (
+                            <option key={st} value={st}>{st}</option>
+                          ))}
                           <option value="Other">Custom Label...</option>
                         </select>
                         
                         <button
                           type="button"
-                          onClick={() => handleAddPhotoClick(item.id)}
+                          onClick={() => {
+                            const currentDefault = (targetThrowId === item.id && stageLabel) ? stageLabel : (activeStage !== 'all' ? activeStage : 'Leather Hard');
+                            handleAddPhotoClick(item.id, currentDefault);
+                          }}
                           className="btn btn-celadon"
                           style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem', borderRadius: '8px' }}
                         >
@@ -395,20 +469,8 @@ export default function History({ throws, settings, user }) {
                       )}
                     </div>
 
-                    {/* Notes */}
-                    <p style={{
-                      fontSize: '0.9rem',
-                      lineHeight: '1.4',
-                      color: 'var(--text-secondary)',
-                      background: 'rgba(255,255,255,0.05)',
-                      padding: '0.75rem',
-                      borderRadius: '12px',
-                      borderLeft: '3px solid var(--terracotta)',
-                      maxHeight: '100px',
-                      overflowY: 'auto'
-                    }}>
-                      {item.notes || <em>No notes recorded.</em>}
-                    </p>
+                    {/* Post-it Notes Stack */}
+                    <PostItNotesStack throwItem={item} activeStage={activeStage} settings={settings} onUpdateNotes={handleUpdateNotes} />
                   </div>
 
                   {/* Delete Button */}

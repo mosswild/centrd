@@ -98,6 +98,37 @@ export async function signOutUser() {
   window.dispatchEvent(new CustomEvent("local-auth-changed"));
 }
 
+export async function wipeApplicationData() {
+  // 1. Reset backend database and uploads if connected to Express server
+  if (!isStaticDemo()) {
+    try {
+      await fetch('/centrd/api/reset', { method: 'POST' });
+    } catch (e) {
+      console.error("Failed to call server reset API:", e);
+    }
+  }
+
+  // 2. Clear local IndexedDB stores
+  try {
+    const db = await getLocalDb();
+    const storeNames = Array.from(db.objectStoreNames);
+    if (storeNames.length > 0) {
+      const tx = db.transaction(storeNames, "readwrite");
+      storeNames.forEach(name => tx.objectStore(name).clear());
+      await new Promise((resolve) => {
+        tx.oncomplete = resolve;
+        tx.onerror = resolve;
+      });
+    }
+  } catch (e) {
+    console.error("Failed to clear local IndexedDB stores:", e);
+  }
+
+  // 3. Clear all localStorage keys (profiles, auth session, theme preferences)
+  localStorage.clear();
+  window.dispatchEvent(new CustomEvent("local-auth-changed"));
+}
+
 export function signInProfile(profile) {
   localStorage.setItem("throwing_log_mock_user", JSON.stringify(profile));
   window.dispatchEvent(new CustomEvent("local-auth-changed"));
@@ -133,6 +164,41 @@ export async function createProfile(name, studio = "", avatar = "🍯") {
   });
   if (!res.ok) throw new Error('Failed to create profile');
   return res.json();
+}
+
+export async function updateProfile(profileId, updates) {
+  let updatedProfile = null;
+  if (isStaticDemo()) {
+    const profiles = await getProfiles();
+    const idx = profiles.findIndex(p => p.id === profileId);
+    if (idx !== -1) {
+      profiles[idx] = { ...profiles[idx], ...updates };
+      localStorage.setItem("throwing_log_profiles", JSON.stringify(profiles));
+      updatedProfile = profiles[idx];
+    }
+  } else {
+    const res = await fetch(`/centrd/api/profiles/${profileId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updates)
+    });
+    if (!res.ok) throw new Error('Failed to update profile');
+    updatedProfile = await res.json();
+  }
+
+  if (updatedProfile) {
+    const activeUserJson = localStorage.getItem("throwing_log_mock_user");
+    if (activeUserJson) {
+      const activeUser = JSON.parse(activeUserJson);
+      if (activeUser.id === profileId) {
+        const merged = { ...activeUser, ...updatedProfile };
+        localStorage.setItem("throwing_log_mock_user", JSON.stringify(merged));
+        window.dispatchEvent(new CustomEvent("local-auth-changed"));
+      }
+    }
+  }
+
+  return updatedProfile;
 }
 
 export async function deleteProfile(profileId) {
@@ -187,6 +253,12 @@ export async function loadSettings(userId) {
       cadenceFrequency: 3,
       cadencePeriod: "week",
       globalUnit: "lb",
+      potteryStages: [
+        'Wet Clay',
+        'Trimmed',
+        'Glaze Application',
+        'Fired'
+      ],
       weightCategories: [
         { id: "1lb", name: "1 lb Cylinder", weight: 1, unit: "lb", targetCount: 100 },
         { id: "2lb", name: "2 lb Cylinder", weight: 2, unit: "lb", targetCount: 50 },
@@ -212,6 +284,62 @@ export async function saveSettings(userId, settings) {
   });
   if (!res.ok) throw new Error('Failed to save settings');
   return res.json();
+}
+
+// Helper to batch-remap photo and note stages across all throw entries for a user
+export async function remapThrowStages(userId, oldStage, newStage, currentThrows = []) {
+  let throwsToProcess = currentThrows;
+  if (!throwsToProcess || throwsToProcess.length === 0) {
+    if (isStaticDemo()) {
+      const all = await listLocal("throws");
+      throwsToProcess = all.filter(t => t.userId === userId);
+    } else {
+      const res = await fetch(`/centrd/api/throws/${userId}`);
+      if (res.ok) {
+        throwsToProcess = await res.json();
+      }
+    }
+  }
+
+  let count = 0;
+  for (const t of throwsToProcess) {
+    let modified = false;
+    
+    // Remap photos
+    let updatedPhotos = t.photos;
+    if (Array.isArray(t.photos)) {
+      updatedPhotos = t.photos.map(p => {
+        if (p.stage && p.stage.toLowerCase().trim() === oldStage.toLowerCase().trim()) {
+          modified = true;
+          return { ...p, stage: newStage };
+        }
+        return p;
+      });
+    }
+
+    // Remap notesArray
+    let updatedNotesArray = t.notesArray;
+    if (Array.isArray(t.notesArray)) {
+      updatedNotesArray = t.notesArray.map(n => {
+        if (n.stage && n.stage.toLowerCase().trim() === oldStage.toLowerCase().trim()) {
+          modified = true;
+          return { ...n, stage: newStage };
+        }
+        return n;
+      });
+    }
+
+    if (modified) {
+      count++;
+      const summaryText = updatedNotesArray ? updatedNotesArray.map(n => `[${n.stage || 'General'}] ${n.text}`).join('\n') : t.notes;
+      await updateThrowLog(t.id, {
+        photos: updatedPhotos,
+        notesArray: updatedNotesArray,
+        notes: summaryText
+      });
+    }
+  }
+  return count;
 }
 
 // --- Cylinder Throw Logs Operations ---

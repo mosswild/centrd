@@ -117,17 +117,39 @@ export default function Dashboard({ throws, settings, user }) {
   return (
     <div className="dashboard-view animate-fade-in">
       {/* Welcome Header */}
-      <div style={{ marginBottom: '2.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
-        <div>
-          <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--terracotta)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            Centrd: A Throwing Diary
-          </span>
-          <h1 className="serif-title" style={{ fontSize: '2.4rem', fontWeight: 700, marginTop: '0.2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            Welcome back, {user.name} <span style={{ fontSize: '2rem' }}>{user.avatar || '🍯'}</span>
-          </h1>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginTop: '0.25rem', fontStyle: 'italic' }}>
-            "Find your center. Challenge your limits. Log your growth."{user.studio && ` — ${user.studio}`}
-          </p>
+      <div style={{ marginBottom: '2.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1.25rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1.2rem' }}>
+          {/* Avatar Icon Badge with rounded square border */}
+          <div
+            className="glass"
+            style={{
+              width: '3.5rem',
+              height: '3.5rem',
+              borderRadius: '18px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '2rem',
+              background: 'var(--bg-secondary)',
+              border: '1.5px solid var(--border-color)',
+              boxShadow: '0 8px 20px rgba(0, 0, 0, 0.06)',
+              flexShrink: 0
+            }}
+          >
+            {user.avatar || '🍯'}
+          </div>
+
+          <div>
+            <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--terracotta)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Centrd: A Throwing Diary
+            </span>
+            <h1 className="serif-title" style={{ fontSize: '2.2rem', fontWeight: 700, marginTop: '0.1rem', lineHeight: '1.2' }}>
+              Welcome back, {user.name}
+            </h1>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', marginTop: '0.25rem', fontStyle: 'italic' }}>
+              "Find your center. Challenge your limits. Log your growth."{user.studio && ` — ${user.studio}`}
+            </p>
+          </div>
         </div>
         <div style={{ display: 'flex', gap: '0.75rem' }}>
           <div className="glass" style={{ padding: '0.5rem 1rem', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem' }}>
