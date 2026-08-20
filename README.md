@@ -35,6 +35,44 @@ It runs on a **100% self-hosted, local-first architecture**, meaning all potter 
 
 ---
 
+## 📸 App Showcase
+
+<table width="100%">
+  <tr>
+    <td width="33.33%" align="center"><b>Dashboard Overview</b></td>
+    <td width="33.33%" align="center"><b>Throwing Logbook</b></td>
+    <td width="33.33%" align="center"><b>Sticky Note Details</b></td>
+  </tr>
+  <tr>
+    <td width="33.33%" align="center" valign="top"><img src="docs/images/dashboard.jpeg" width="100%" alt="Dashboard Overview" /></td>
+    <td width="33.33%" align="center" valign="top"><img src="docs/images/history_logbook.jpeg" width="100%" alt="Throwing Logbook" /></td>
+    <td width="33.33%" align="center" valign="top"><img src="docs/images/sticky_note_detail.jpeg" width="100%" alt="Sticky Note Detail" /></td>
+  </tr>
+  <tr>
+    <td width="33.33%" align="center"><sub><i>Track ring progress & switch active challenges</i></sub></td>
+    <td width="33.33%" align="center"><sub><i>Browse history cards with stage filter pills</i></sub></td>
+    <td width="33.33%" align="center"><sub><i>Attach color-coded notes & stage photos</i></sub></td>
+  </tr>
+</table>
+
+<table width="100%">
+  <tr>
+    <td width="33.33%" align="center"><b>Potter Profile Selector</b></td>
+    <td width="33.33%" align="center"><b>Challenge & Stage Settings</b></td>
+    <td width="33.33%" align="center"><b>Sleek Dark Mode</b></td>
+  </tr>
+  <tr>
+    <td width="33.33%" align="center" valign="top"><img src="docs/images/profile_selection.jpeg" width="100%" alt="Potter Profiles" /></td>
+    <td width="33.33%" align="center" valign="top"><img src="docs/images/challenge_settings.jpeg" width="100%" alt="Challenge Settings" /></td>
+    <td width="33.33%" align="center" valign="top"><img src="docs/images/dark_mode.jpeg" width="100%" alt="Dark Mode Theme" /></td>
+  </tr>
+  <tr>
+    <td width="33.33%" align="center"><sub><i>Multi-potter profile selection & avatars</i></sub></td>
+    <td width="33.33%" align="center"><sub><i>Configure weight targets, stages, & units</i></sub></td>
+    <td width="33.33%" align="center"><sub><i>Full dark mode theme for studio lighting</i></sub></td>
+  </tr>
+</table>
+
 ## 🚀 Home Server Setup Walkthrough
 
 Setting up Centrd on a home server (like a Synology NAS, Raspberry Pi, Home Assistant host, or any local server) is quick and requires no external databases or cloud API keys.
