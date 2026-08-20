@@ -189,7 +189,7 @@ export default function PostItNotesStack({ throwItem, onUpdateNotes, activeStage
           className={readOnly ? "" : "glass-interactive"}
         >
           <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
-            <em>No notes for {activeStage === 'all' ? 'this cylinder' : activeStage}. {readOnly ? '' : 'Click to add one!'}</em>
+            <em>No notes for {activeStage === 'all' ? 'this piece' : activeStage}. {readOnly ? '' : 'Click to add one!'}</em>
           </p>
         </div>
       ) : isExpanded ? (

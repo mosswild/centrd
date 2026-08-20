@@ -246,7 +246,7 @@ export async function loadSettings(userId) {
     return {
       userId,
       enableChallenge: true,
-      challengeName: "200 Cylinder Challenge",
+      challengeName: "200 Piece Challenge",
       targetCylinders: 200,
       hasTimeLimit: false,
       startDate: new Date().toISOString().split('T')[0],
@@ -262,10 +262,10 @@ export async function loadSettings(userId) {
         'Fired'
       ],
       weightCategories: [
-        { id: "1lb", name: "1 lb Cylinder", weight: 1, unit: "lb", targetCount: 100 },
-        { id: "2lb", name: "2 lb Cylinder", weight: 2, unit: "lb", targetCount: 50 },
-        { id: "3lb", name: "3 lb Cylinder", weight: 3, unit: "lb", targetCount: 30 },
-        { id: "5lb", name: "5 lb Cylinder", weight: 5, unit: "lb", targetCount: 20 }
+        { id: "1lb", name: "1 lb Piece", weight: 1, unit: "lb", targetCount: 100 },
+        { id: "2lb", name: "2 lb Piece", weight: 2, unit: "lb", targetCount: 50 },
+        { id: "3lb", name: "3 lb Piece", weight: 3, unit: "lb", targetCount: 30 },
+        { id: "5lb", name: "5 lb Piece", weight: 5, unit: "lb", targetCount: 20 }
       ]
     };
   }
@@ -338,6 +338,56 @@ export async function remapThrowStages(userId, oldStage, newStage, currentThrows
         photos: updatedPhotos,
         notesArray: updatedNotesArray,
         notes: summaryText
+      });
+    }
+  }
+  return count;
+}
+
+export async function renameChallengeInThrows(userId, oldName, newName, currentThrows = []) {
+  if (!oldName || !newName || oldName.trim() === newName.trim()) return 0;
+  const oldTrimmed = oldName.trim().toLowerCase();
+  const newTrimmed = newName.trim();
+
+  let throwsToProcess = currentThrows;
+  if (!throwsToProcess || throwsToProcess.length === 0) {
+    if (isStaticDemo()) {
+      const all = await listLocal("throws");
+      throwsToProcess = all.filter(t => t.userId === userId);
+    } else {
+      const res = await fetch(`/centrd/api/throws/${userId}`);
+      if (res.ok) {
+        throwsToProcess = await res.json();
+      }
+    }
+  }
+
+  let count = 0;
+  for (const t of throwsToProcess) {
+    let modified = false;
+    let newChallengeName = t.challengeName;
+    let newChallengeNames = t.challengeNames;
+
+    if (t.challengeName && t.challengeName.trim().toLowerCase() === oldTrimmed) {
+      newChallengeName = newTrimmed;
+      modified = true;
+    }
+
+    if (Array.isArray(t.challengeNames)) {
+      newChallengeNames = t.challengeNames.map(name => {
+        if (name && name.trim().toLowerCase() === oldTrimmed) {
+          modified = true;
+          return newTrimmed;
+        }
+        return name;
+      });
+    }
+
+    if (modified) {
+      count++;
+      await updateThrowLog(t.id, {
+        challengeName: newChallengeName,
+        challengeNames: newChallengeNames
       });
     }
   }

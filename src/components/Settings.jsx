@@ -1,11 +1,16 @@
 import React, { useState } from 'react';
-import { saveSettings, signOutUser, remapThrowStages, updateProfile, deleteProfile } from '../db';
-import { Settings as SettingsIcon, LogOut, Download, Upload, Plus, Trash2, Loader2, ArrowUp, ArrowDown, Edit2, Check, X, RotateCcw, Target } from 'lucide-react';
+import { saveSettings, signOutUser, remapThrowStages, updateProfile, deleteProfile, renameChallengeInThrows } from '../db';
+import { Settings as SettingsIcon, LogOut, Download, Upload, Plus, Trash2, Loader2, ArrowUp, ArrowDown, Edit2, Check, X, Target } from 'lucide-react';
 import { importChallengeFromZip } from '../utils/importer';
+import { getSavedChallenges, switchActiveChallengeInSettings, deleteChallengeFromSettings, renameChallengeInSettings } from '../utils/challengeUtils';
 
 const AVATAR_OPTIONS = ["🍯", "🏺", "🍵", "🧱", "🎨", "⚱️", "🌻", "🌊", "🌿", "☕", "🕯️", "🪵"];
 
 export default function Settings({ settings, throws = [], user, onSettingsUpdate }) {
+  const savedChallenges = getSavedChallenges(settings);
+  const availableChallengeNames = Array.from(
+    new Set(savedChallenges.map(c => c.name).filter(Boolean))
+  );
   // Potter Profile State
   const [profileName, setProfileName] = useState(user.name || '');
   const [profileStudio, setProfileStudio] = useState(user.studio || '');
@@ -23,7 +28,6 @@ export default function Settings({ settings, throws = [], user, onSettingsUpdate
   const [cadencePeriod, setCadencePeriod] = useState(settings.cadencePeriod || 'week');
   const [weightCategories, setWeightCategories] = useState(settings.weightCategories || []);
   const [globalUnit, setGlobalUnit] = useState(settings.globalUnit || 'lb');
-  const [challengeStartDate, setChallengeStartDate] = useState(settings.challengeStartDate || '');
 
   // Pottery Stages State
   const [potteryStages, setPotteryStages] = useState(
@@ -199,11 +203,24 @@ export default function Settings({ settings, throws = [], user, onSettingsUpdate
     }
 
     try {
-      const updatedSettings = {
-        userId: user.id,
-        enableChallenge,
-        challengeName,
-        targetCylinders,
+      const previousActiveName = settings.challengeName || '200 Piece Challenge';
+      const currentActiveName = challengeName.trim() || '200 Piece Challenge';
+
+      let workingSettings = settings;
+
+      // If challenge was renamed, rename in savedChallenges AND remap throw log tags!
+      if (previousActiveName.toLowerCase().trim() !== currentActiveName.toLowerCase().trim()) {
+        workingSettings = renameChallengeInSettings(workingSettings, previousActiveName, currentActiveName);
+        await renameChallengeInThrows(user.id, previousActiveName, currentActiveName, throws);
+      }
+
+      const computedTarget = weightCategories.reduce((sum, cat) => sum + (Number(cat.targetCount) || 0), 0);
+      const currentChallenges = getSavedChallenges(workingSettings);
+
+      const activeSnapshot = {
+        id: currentActiveName.toLowerCase().replace(/[^a-z0-9]/g, '_'),
+        name: currentActiveName,
+        targetCylinders: computedTarget,
         hasTimeLimit: scheduleType === 'deadline',
         scheduleType,
         startDate,
@@ -214,10 +231,35 @@ export default function Settings({ settings, throws = [], user, onSettingsUpdate
           ...cat,
           weight: Math.round(Number(cat.weight)) || 1,
           unit: globalUnit
-        })),
+        }))
+      };
+
+      let updatedSavedChallenges = [...currentChallenges];
+      const existingIdx = updatedSavedChallenges.findIndex(
+        c => c.name.toLowerCase().trim() === currentActiveName.toLowerCase().trim()
+      );
+      if (existingIdx >= 0) {
+        updatedSavedChallenges[existingIdx] = { ...updatedSavedChallenges[existingIdx], ...activeSnapshot };
+      } else {
+        updatedSavedChallenges.push(activeSnapshot);
+      }
+
+      const updatedSettings = {
+        ...workingSettings,
+        userId: user.id,
+        enableChallenge,
+        challengeName: currentActiveName,
+        targetCylinders: computedTarget,
+        hasTimeLimit: scheduleType === 'deadline',
+        scheduleType,
+        startDate,
+        endDate: scheduleType === 'deadline' ? endDate : '',
+        cadenceFrequency: Number(cadenceFrequency),
+        cadencePeriod,
+        weightCategories: activeSnapshot.weightCategories,
         globalUnit,
         potteryStages,
-        challengeStartDate
+        savedChallenges: updatedSavedChallenges
       };
 
       await saveSettings(user.id, updatedSettings);
@@ -236,7 +278,6 @@ export default function Settings({ settings, throws = [], user, onSettingsUpdate
     const settingsData = {
       enableChallenge,
       challengeName,
-      challengeStartDate,
       targetCylinders,
       scheduleType,
       hasTimeLimit: scheduleType === 'deadline',
@@ -274,8 +315,7 @@ export default function Settings({ settings, throws = [], user, onSettingsUpdate
         const parsed = JSON.parse(event.target.result);
         if (parsed.targetCylinders && Array.isArray(parsed.weightCategories)) {
           setEnableChallenge(parsed.enableChallenge !== false);
-          setChallengeName(parsed.challengeName || '200 Cylinder Challenge');
-          setChallengeStartDate(parsed.challengeStartDate || '');
+          setChallengeName(parsed.challengeName || '200 Piece Challenge');
           setTargetCylinders(parsed.targetCylinders);
           setScheduleType(parsed.scheduleType || (parsed.hasTimeLimit ? 'deadline' : 'none'));
           setStartDate(parsed.startDate || new Date().toISOString().split('T')[0]);
@@ -290,8 +330,7 @@ export default function Settings({ settings, throws = [], user, onSettingsUpdate
           const updatedSettings = {
             userId: user.id,
             enableChallenge: parsed.enableChallenge !== false,
-            challengeName: parsed.challengeName || '200 Cylinder Challenge',
-            challengeStartDate: parsed.challengeStartDate || '',
+            challengeName: parsed.challengeName || '200 Piece Challenge',
             targetCylinders: parsed.targetCylinders,
             hasTimeLimit: parsed.scheduleType === 'deadline' || parsed.hasTimeLimit,
             scheduleType: parsed.scheduleType || (parsed.hasTimeLimit ? 'deadline' : 'none'),
@@ -594,32 +633,125 @@ export default function Settings({ settings, throws = [], user, onSettingsUpdate
           {enableChallenge ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
               <div>
-                <label htmlFor="challengeName">Challenge Name</label>
-                <input
-                  id="challengeName"
-                  type="text"
-                  placeholder="e.g. Summer 200 Mug Sprint"
-                  value={challengeName}
-                  onChange={(e) => setChallengeName(e.target.value)}
-                />
+                <label htmlFor="challengeName">Active Challenge Name</label>
+                <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+                  <input
+                    id="challengeName"
+                    type="text"
+                    placeholder="e.g. Fall 200 Piece Sprint"
+                    value={challengeName}
+                    onChange={(e) => setChallengeName(e.target.value)}
+                    style={{ flex: 1, minWidth: '200px' }}
+                  />
+                  <select
+                    value={availableChallengeNames.includes(challengeName) ? challengeName : '__CUSTOM__'}
+                    onChange={async (e) => {
+                      let targetName = e.target.value;
+                      if (targetName === '__CREATE_NEW__') {
+                        const newName = window.prompt("Enter a name for your new challenge:", "Fall 100 Speedrun");
+                        if (!newName || !newName.trim()) return;
+                        targetName = newName.trim();
+                      } else if (targetName === '__CUSTOM__') {
+                        return;
+                      }
+
+                      // Snapshot current state into settings object before switching
+                      const currentSettingsSnapshot = {
+                        ...settings,
+                        enableChallenge,
+                        challengeName,
+                        targetCylinders: weightCategories.reduce((sum, cat) => sum + (Number(cat.targetCount) || 0), 0),
+                        scheduleType,
+                        hasTimeLimit: scheduleType === 'deadline',
+                        startDate,
+                        endDate,
+                        cadenceFrequency: Number(cadenceFrequency) || 3,
+                        cadencePeriod,
+                        weightCategories,
+                        globalUnit,
+                        potteryStages
+                      };
+
+                      const merged = switchActiveChallengeInSettings(currentSettingsSnapshot, targetName);
+                      setChallengeName(merged.challengeName);
+                      setTargetCylinders(merged.targetCylinders);
+                      setScheduleType(merged.scheduleType);
+                      setStartDate(merged.startDate);
+                      setEndDate(merged.endDate);
+                      setCadenceFrequency(merged.cadenceFrequency);
+                      setCadencePeriod(merged.cadencePeriod);
+                      setWeightCategories(merged.weightCategories);
+
+                      try {
+                        await saveSettings(user.id, merged);
+                        if (onSettingsUpdate) onSettingsUpdate(merged);
+                      } catch (err) {
+                        console.error(err);
+                      }
+                    }}
+                    style={{ minWidth: '180px' }}
+                  >
+                    <option value="__CUSTOM__">Switch Saved Challenge...</option>
+                    {availableChallengeNames.map(cName => (
+                      <option key={cName} value={cName}>🏷️ {cName}</option>
+                    ))}
+                    <option value="__CREATE_NEW__">+ Create New Challenge...</option>
+                  </select>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      if (window.confirm(`Are you sure you want to delete the challenge "${challengeName}"?`)) {
+                        const updatedSettings = deleteChallengeFromSettings(settings, challengeName);
+                        setChallengeName(updatedSettings.challengeName);
+                        setTargetCylinders(updatedSettings.targetCylinders);
+                        setScheduleType(updatedSettings.scheduleType);
+                        setStartDate(updatedSettings.startDate);
+                        setEndDate(updatedSettings.endDate);
+                        setCadenceFrequency(updatedSettings.cadenceFrequency);
+                        setCadencePeriod(updatedSettings.cadencePeriod);
+                        setWeightCategories(updatedSettings.weightCategories);
+
+                        try {
+                          await saveSettings(user.id, updatedSettings);
+                          if (onSettingsUpdate) onSettingsUpdate(updatedSettings);
+                        } catch (err) {
+                          console.error(err);
+                        }
+                      }
+                    }}
+                    className="btn btn-secondary"
+                    style={{ color: 'var(--collapse)', borderColor: 'var(--collapse)', padding: '0.5rem 0.85rem', fontSize: '0.82rem' }}
+                    title="Delete this challenge"
+                  >
+                    <Trash2 size={14} /> Delete Challenge
+                  </button>
+                </div>
                 <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'block', marginTop: '0.25rem' }}>
-                  Give your throwing challenge a custom title for your dashboard and log history.
+                  Select from configured challenges or type a new challenge name. Switching challenges restores its specific targets and start timestamp.
                 </span>
               </div>
 
-            <div>
-              <label htmlFor="targetCylinders">Total Challenge Cylinder Target</label>
-              <input
-                id="targetCylinders"
-                type="number"
-                disabled
-                value={targetCylinders}
-                style={{ opacity: 0.8, background: 'var(--bg-primary)', fontWeight: 700 }}
-              />
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'block', marginTop: '0.25rem' }}>
-                Note: This is automatically calculated as the sum of all weight targets.
-              </span>
-            </div>
+              <div>
+                <label>Total Challenge Target</label>
+                <div style={{
+                  padding: '0.75rem 1rem',
+                  borderRadius: '12px',
+                  border: '1px solid var(--border-color)',
+                  background: 'var(--bg-secondary)',
+                  fontWeight: 700,
+                  fontSize: '1.05rem',
+                  color: 'var(--terracotta)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}>
+                  <Target size={18} />
+                  {weightCategories.reduce((sum, cat) => sum + (Number(cat.targetCount) || 0), 0)} Pieces Total
+                </div>
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'block', marginTop: '0.25rem' }}>
+                  Automatically calculated as the sum of all weight category target counts below.
+                </span>
+              </div>
 
             <div>
               <label htmlFor="globalUnit">Global Weight Unit</label>
@@ -724,13 +856,109 @@ export default function Settings({ settings, throws = [], user, onSettingsUpdate
               </div>
             )}
 
-            {/* Reset Challenge Progress Action */}
+            {/* Weight Classes Section Inside Challenge Targets */}
+            <div style={{ marginTop: '2rem', paddingTop: '1.75rem', borderTop: '1px solid var(--border-color)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+                <h4 style={{ fontWeight: 700, fontSize: '1.05rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <Plus size={18} style={{ color: 'var(--terracotta)' }} />
+                  Weight Classes
+                </h4>
+                <button
+                  type="button"
+                  onClick={handleAddCategory}
+                  className="btn btn-secondary"
+                  style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem', borderRadius: '8px' }}
+                >
+                  Add Class
+                </button>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                {weightCategories.map((cat, idx) => (
+                  <div key={cat.id || idx} className="weight-class-row">
+                    <div className="weight-class-name-col">
+                      <label style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: 600, display: 'block', marginBottom: '0.2rem' }}>
+                        Class Name
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="Name"
+                        value={cat.name}
+                        onChange={(e) => handleCategoryChange(idx, 'name', e.target.value)}
+                        style={{ fontSize: '0.85rem', padding: '0.45rem 0.65rem' }}
+                      />
+                    </div>
+
+                    <div className="weight-class-weight-col">
+                      <label style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: 600, display: 'block', marginBottom: '0.2rem' }}>
+                        Weight
+                      </label>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                        <input
+                          type="number"
+                          step="1"
+                          min="1"
+                          placeholder="Weight"
+                          value={cat.weight}
+                          onChange={(e) => handleCategoryChange(idx, 'weight', e.target.value === '' ? '' : Math.round(Number(e.target.value)))}
+                          style={{ fontSize: '0.85rem', padding: '0.45rem 0.65rem', flex: 1 }}
+                        />
+                        <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 600, flexShrink: 0 }}>
+                          {globalUnit}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="weight-class-count-col">
+                      <label style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: 600, display: 'block', marginBottom: '0.2rem' }}>
+                        Target Count
+                      </label>
+                      <input
+                        type="number"
+                        placeholder="Count"
+                        value={cat.targetCount}
+                        onChange={(e) => handleCategoryChange(idx, 'targetCount', e.target.value)}
+                        style={{ fontSize: '0.85rem', padding: '0.45rem 0.65rem' }}
+                      />
+                    </div>
+
+                    <div className="weight-class-delete-col" style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveCategory(idx)}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: 'var(--text-secondary)',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          padding: '0.4rem',
+                          marginTop: '0.8rem'
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.color = 'var(--collapse)'}
+                        onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-secondary)'}
+                        title="Remove Weight Class"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+                {weightCategories.length === 0 && (
+                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', textAlign: 'center', padding: '1rem' }}>
+                    No weight categories defined. Please add at least one category.
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Challenge Settings Import / Export Section Inside Challenge Targets */}
             <div style={{
-              background: 'var(--bg-secondary)',
-              border: '1px solid var(--border-color)',
-              borderRadius: '16px',
-              padding: '1.25rem',
-              marginTop: '1rem',
+              marginTop: '2rem',
+              paddingTop: '1.5rem',
+              borderTop: '1px solid var(--border-color)',
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
@@ -738,101 +966,47 @@ export default function Settings({ settings, throws = [], user, onSettingsUpdate
               gap: '1rem'
             }}>
               <div>
-                <h4 style={{ fontWeight: 700, fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                  <RotateCcw size={15} style={{ color: 'var(--terracotta)' }} />
-                  Reset Challenge Progress
+                <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--terracotta)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  Challenge Backup
+                </span>
+                <h4 style={{ fontWeight: 700, fontSize: '1.05rem', marginTop: '0.15rem' }}>
+                  Challenge Configuration JSON
                 </h4>
-                <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '0.2rem', lineHeight: '1.4' }}>
-                  {challengeStartDate ? (
-                    <>Challenge reset on <strong>{new Date(challengeStartDate).toLocaleDateString()} at {new Date(challengeStartDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</strong>. All prior logs remain safe in history.</>
-                  ) : (
-                    <>Reset your current cylinder count to 0 for a fresh challenge cycle. All existing throw entries and photos will remain safe in your history log.</>
-                  )}
+                <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>
+                  Export or import your throwing challenge goals, weight classes, and schedule targets as a JSON file.
                 </p>
               </div>
-
-              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
-                {challengeStartDate && (
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      if (window.confirm("Include all historical logs in challenge counts again?")) {
-                        setChallengeStartDate('');
-                        const updatedSettings = {
-                          userId: user.id,
-                          targetCylinders,
-                          hasTimeLimit: scheduleType === 'deadline',
-                          scheduleType,
-                          startDate,
-                          endDate: scheduleType === 'deadline' ? endDate : '',
-                          cadenceFrequency: Number(cadenceFrequency),
-                          cadencePeriod,
-                          weightCategories,
-                          globalUnit,
-                          potteryStages,
-                          challengeStartDate: ''
-                        };
-                        try {
-                          await saveSettings(user.id, updatedSettings);
-                          if (onSettingsUpdate) onSettingsUpdate(updatedSettings);
-                        } catch (err) {
-                          console.error(err);
-                        }
-                      }
-                    }}
-                    className="btn btn-secondary"
-                    style={{ fontSize: '0.78rem', padding: '0.4rem 0.8rem' }}
-                  >
-                    Include All History
-                  </button>
-                )}
-
+              <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
                 <button
                   type="button"
-                  onClick={async () => {
-                    const confirmMsg = "Start a new challenge cycle?\n\nYour challenge throw count will reset to 0, but all your past logs and photos will stay in your history.";
-                    if (window.confirm(confirmMsg)) {
-                      const newNameInput = window.prompt("Name your new challenge cycle:", challengeName || "200 Cylinder Challenge");
-                      const activeName = (newNameInput !== null && newNameInput.trim()) ? newNameInput.trim() : (challengeName || "200 Cylinder Challenge");
-                      const nowIso = new Date().toISOString();
-                      
-                      setChallengeName(activeName);
-                      setChallengeStartDate(nowIso);
-                      
-                      const updatedSettings = {
-                        userId: user.id,
-                        challengeName: activeName,
-                        targetCylinders,
-                        hasTimeLimit: scheduleType === 'deadline',
-                        scheduleType,
-                        startDate,
-                        endDate: scheduleType === 'deadline' ? endDate : '',
-                        cadenceFrequency: Number(cadenceFrequency),
-                        cadencePeriod,
-                        weightCategories,
-                        globalUnit,
-                        potteryStages,
-                        challengeStartDate: nowIso
-                      };
-                      try {
-                        await saveSettings(user.id, updatedSettings);
-                        if (onSettingsUpdate) onSettingsUpdate(updatedSettings);
-                      } catch (err) {
-                        console.error(err);
-                      }
-                    }
-                  }}
+                  onClick={handleExportJSON}
+                  className="btn btn-secondary"
+                  style={{ padding: '0.5rem 1rem', fontSize: '0.82rem' }}
+                >
+                  <Download size={15} />
+                  Export Challenge Settings
+                </button>
+                <label
                   className="btn btn-secondary"
                   style={{
-                    color: 'var(--terracotta)',
-                    borderColor: 'var(--terracotta)',
-                    fontSize: '0.78rem',
-                    padding: '0.4rem 0.8rem'
+                    margin: 0,
+                    padding: '0.5rem 1rem',
+                    fontSize: '0.82rem',
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
                   }}
                 >
-                  <RotateCcw size={14} />
-                  Reset Progress to 0
-                </button>
+                  <Upload size={15} />
+                  Import Challenge Settings
+                  <input
+                    type="file"
+                    accept=".json"
+                    onChange={handleImportJSON}
+                    style={{ display: 'none' }}
+                  />
+                </label>
               </div>
             </div>
           </div>
@@ -850,158 +1024,11 @@ export default function Settings({ settings, throws = [], user, onSettingsUpdate
             </div>
           )}
 
-        </div>
-
-        {/* Weights Categories Breakdown */}
-        <div className="glass" style={{ padding: '2rem', borderRadius: '24px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-            <h3 className="serif-title" style={{ fontSize: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <Plus size={20} style={{ color: 'var(--terracotta)' }} />
-              Weight Classes
-            </h3>
-            <button
-              type="button"
-              onClick={handleAddCategory}
-              className="btn btn-secondary"
-              style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem', borderRadius: '8px' }}
-            >
-              Add Class
+          {/* Save Button for Challenge Targets & Goals */}
+          <div style={{ marginTop: '2rem', paddingTop: '1.25rem', borderTop: '1px solid var(--border-color)', display: 'flex', justifyContent: 'flex-end' }}>
+            <button type="submit" className="btn btn-primary" style={{ padding: '0.75rem 1.5rem', fontWeight: 700 }}>
+              Save Challenge Configuration
             </button>
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            {weightCategories.map((cat, idx) => (
-              <div key={cat.id || idx} className="weight-class-row">
-                <div className="weight-class-name-col">
-                  <label style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: 600, display: 'block', marginBottom: '0.2rem' }}>
-                    Class Name
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Name"
-                    value={cat.name}
-                    onChange={(e) => handleCategoryChange(idx, 'name', e.target.value)}
-                    style={{ fontSize: '0.85rem', padding: '0.45rem 0.65rem' }}
-                  />
-                </div>
-
-                <div className="weight-class-weight-col">
-                  <label style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: 600, display: 'block', marginBottom: '0.2rem' }}>
-                    Weight
-                  </label>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                    <input
-                      type="number"
-                      step="1"
-                      min="1"
-                      placeholder="Weight"
-                      value={cat.weight}
-                      onChange={(e) => handleCategoryChange(idx, 'weight', e.target.value === '' ? '' : Math.round(Number(e.target.value)))}
-                      style={{ fontSize: '0.85rem', padding: '0.45rem 0.65rem', flex: 1 }}
-                    />
-                    <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 600, flexShrink: 0 }}>
-                      {globalUnit}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="weight-class-count-col">
-                  <label style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: 600, display: 'block', marginBottom: '0.2rem' }}>
-                    Target Count
-                  </label>
-                  <input
-                    type="number"
-                    placeholder="Count"
-                    value={cat.targetCount}
-                    onChange={(e) => handleCategoryChange(idx, 'targetCount', e.target.value)}
-                    style={{ fontSize: '0.85rem', padding: '0.45rem 0.65rem' }}
-                  />
-                </div>
-
-                <div className="weight-class-delete-col" style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveCategory(idx)}
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      color: 'var(--text-secondary)',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      padding: '0.4rem',
-                      marginTop: '0.8rem'
-                    }}
-                    onMouseEnter={(e) => e.currentTarget.style.color = 'var(--collapse)'}
-                    onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-secondary)'}
-                    title="Remove Weight Class"
-                  >
-                    <Trash2 size={18} />
-                  </button>
-                </div>
-              </div>
-            ))}
-            {weightCategories.length === 0 && (
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', textAlign: 'center', padding: '1rem' }}>
-                No weight categories defined. Please add at least one category.
-              </p>
-            )}
-          </div>
-        </div>
-
-        {/* Challenge Settings Import / Export Card */}
-        <div className="glass" style={{
-          padding: '1.5rem',
-          borderRadius: '20px',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          flexWrap: 'wrap',
-          gap: '1rem'
-        }}>
-          <div>
-            <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--terracotta)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              Challenge Backup
-            </span>
-            <h4 style={{ fontWeight: 700, fontSize: '1.05rem', marginTop: '0.15rem' }}>
-              Challenge Configuration JSON
-            </h4>
-            <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>
-              Export or import your throwing challenge goals, weight classes, and schedule targets as a JSON file.
-            </p>
-          </div>
-          <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
-            <button
-              type="button"
-              onClick={handleExportJSON}
-              className="btn btn-secondary"
-              style={{ padding: '0.5rem 1rem', fontSize: '0.82rem' }}
-            >
-              <Download size={15} />
-              Export Challenge Settings
-            </button>
-            <label
-              className="btn btn-secondary"
-              style={{
-                margin: 0,
-                padding: '0.5rem 1rem',
-                fontSize: '0.82rem',
-                cursor: 'pointer',
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}
-            >
-              <Upload size={15} />
-              Import Challenge Settings
-              <input
-                type="file"
-                accept=".json"
-                onChange={handleImportJSON}
-                style={{ display: 'none' }}
-              />
-            </label>
           </div>
         </div>
 

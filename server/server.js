@@ -192,10 +192,10 @@ apiRouter.get('/settings/:userId', (req, res) => {
     cadencePeriod: 'week',
     globalUnit: 'lb',
     weightCategories: [
-      { id: '1lb', name: '1 lb Cylinder', weight: 1, unit: 'lb', targetCount: 100 },
-      { id: '2lb', name: '2 lb Cylinder', weight: 2, unit: 'lb', targetCount: 50 },
-      { id: '3lb', name: '3 lb Cylinder', weight: 3, unit: 'lb', targetCount: 30 },
-      { id: '5lb', name: '5 lb Cylinder', weight: 5, unit: 'lb', targetCount: 20 }
+      { id: '1lb', name: '1 lb Piece', weight: 1, unit: 'lb', targetCount: 100 },
+      { id: '2lb', name: '2 lb Piece', weight: 2, unit: 'lb', targetCount: 50 },
+      { id: '3lb', name: '3 lb Piece', weight: 3, unit: 'lb', targetCount: 30 },
+      { id: '5lb', name: '5 lb Piece', weight: 5, unit: 'lb', targetCount: 20 }
     ]
   });
 });

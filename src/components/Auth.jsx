@@ -115,7 +115,7 @@ export default function Auth() {
             Create Potter Profile
           </h2>
           <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '0.9rem' }}>
-            Set up a local profile on this browser to start logging your clay cylinders.
+            Set up a local profile on this browser to start logging your pottery forms.
           </p>
 
           {error && (

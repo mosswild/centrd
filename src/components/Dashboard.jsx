@@ -1,17 +1,31 @@
 import React from 'react';
-import { Flame, Trophy, Calendar, Compass, Target, CheckCircle2, RotateCcw } from 'lucide-react';
-import { isThrowInChallenge } from '../utils/challengeUtils';
+import { Flame, Trophy, Calendar, Compass, Target, CheckCircle2, Tag } from 'lucide-react';
+import { isThrowInChallenge, getSavedChallenges, switchActiveChallengeInSettings } from '../utils/challengeUtils';
+import { saveSettings } from '../db';
 
-export default function Dashboard({ throws = [], settings, user }) {
+export default function Dashboard({ throws = [], settings, user, onSettingsUpdate }) {
   const enableChallenge = settings.enableChallenge !== false;
-  const challengeStartDate = enableChallenge ? (settings.challengeStartDate || '') : '';
+  const activeChallengeName = settings.challengeName || '200 Piece Challenge';
   const activeThrows = enableChallenge 
-    ? throws.filter(t => isThrowInChallenge(t, challengeStartDate))
+    ? throws.filter(t => isThrowInChallenge(t, activeChallengeName))
     : throws;
   const totalThrows = activeThrows.length;
   const totalHistoryCount = throws.length;
   const targetCylinders = settings.targetCylinders || 200;
-  
+
+  const savedChallenges = getSavedChallenges(settings);
+  const availableChallengeNames = Array.from(
+    new Set(savedChallenges.map(c => c.name).filter(Boolean))
+  );
+
+  const handleSwitchActiveChallenge = async (newChallengeName) => {
+    if (newChallengeName && newChallengeName !== activeChallengeName) {
+      const updatedSettings = switchActiveChallengeInSettings(settings, newChallengeName);
+      await saveSettings(user.id, updatedSettings);
+      if (onSettingsUpdate) onSettingsUpdate(updatedSettings);
+    }
+  };
+
   // Calculate completion percentage
   const overallPercent = Math.min(100, Math.round((totalThrows / targetCylinders) * 100));
 
@@ -122,7 +136,7 @@ export default function Dashboard({ throws = [], settings, user }) {
   const strokeDashoffset = circumference - (overallPercent / 100) * circumference;
 
   // Format Challenge Start Date & Time
-  const rawStartDate = settings.challengeStartDate || settings.startDate;
+  const rawStartDate = settings.startDate;
   let formattedChallengeStart = '';
   if (rawStartDate) {
     try {
@@ -181,22 +195,32 @@ export default function Dashboard({ throws = [], settings, user }) {
           </div>
         </div>
         <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center' }}>
+          {enableChallenge && availableChallengeNames.length > 0 && (
+            <div className="glass" style={{ padding: '0.35rem 0.65rem', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem' }}>
+              <Tag size={15} style={{ color: 'var(--terracotta)' }} />
+              <select
+                value={activeChallengeName}
+                onChange={(e) => handleSwitchActiveChallenge(e.target.value)}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: 'var(--text-primary)',
+                  fontSize: '0.85rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  outline: 'none'
+                }}
+              >
+                {availableChallengeNames.map(cName => (
+                  <option key={cName} value={cName} style={{ color: 'var(--text-primary)', background: 'var(--bg-primary)' }}>
+                    🏷️ {cName}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
           {enableChallenge ? (
             <>
-              {challengeStartDate && totalHistoryCount > totalThrows && (
-                <div className="glass" style={{
-                  padding: '0.5rem 0.85rem',
-                  borderRadius: '12px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.4rem',
-                  fontSize: '0.8rem',
-                  color: 'var(--text-secondary)'
-                }} title={`Challenge reset on ${formattedChallengeStart}. Total history: ${totalHistoryCount} entries.`}>
-                  <RotateCcw size={14} style={{ color: 'var(--terracotta)' }} />
-                  <span>Reset Active ({totalHistoryCount - totalThrows} past logs in history)</span>
-                </div>
-              )}
               <div className="glass" style={{ padding: '0.5rem 1rem', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem' }}>
                 <Flame size={16} style={{ color: 'var(--terracotta)' }} />
                 <span><strong>{totalThrows}</strong> / {targetCylinders} Thrown</span>
@@ -205,7 +229,7 @@ export default function Dashboard({ throws = [], settings, user }) {
           ) : (
             <div className="glass" style={{ padding: '0.5rem 1rem', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem' }}>
               <Flame size={16} style={{ color: 'var(--terracotta)' }} />
-              <span><strong>{totalHistoryCount}</strong> Cylinders Logged</span>
+              <span><strong>{totalHistoryCount}</strong> Pieces Logged</span>
             </div>
           )}
         </div>
@@ -286,11 +310,11 @@ export default function Dashboard({ throws = [], settings, user }) {
             <div style={{ marginTop: '1.5rem', zIndex: 1 }}>
               <h2 className="serif-title" style={{ fontSize: '1.5rem', marginBottom: '0.4rem' }}>
                 {totalThrows >= targetCylinders 
-                  ? `${settings.challengeName || 'Cylinder Challenge'} Accomplished! 🎉` 
-                  : `${settings.challengeName || 'Cylinder Challenge'} Progress`}
+                  ? `${settings.challengeName || 'Challenge'} Accomplished! 🎉` 
+                  : `${settings.challengeName || 'Challenge'} Progress`}
               </h2>
               <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', maxWidth: '360px' }}>
-                You've logged <strong>{totalThrows}</strong> cylinders out of your <strong>{targetCylinders}</strong> target.
+                You've logged <strong>{totalThrows}</strong> pieces out of your <strong>{targetCylinders}</strong> target.
               </p>
               {formattedChallengeStart && (
                 <div style={{
@@ -436,7 +460,7 @@ export default function Dashboard({ throws = [], settings, user }) {
                         {requiredPace}
                       </span>
                       <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginLeft: '0.4rem' }}>
-                        cylinders / day
+                        pieces / day
                       </span>
                     </div>
                   )}
@@ -448,7 +472,7 @@ export default function Dashboard({ throws = [], settings, user }) {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '0.5rem' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem' }}>
                     <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Cadence Target:</span>
-                    <span style={{ fontWeight: 600 }}>{cadenceTarget} cylinders per {cadencePeriod}</span>
+                    <span style={{ fontWeight: 600 }}>{cadenceTarget} pieces per {cadencePeriod}</span>
                   </div>
                   
                   <div style={{ background: 'var(--bg-secondary)', padding: '1rem', borderRadius: '16px' }}>

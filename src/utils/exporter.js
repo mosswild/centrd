@@ -36,7 +36,7 @@ export async function exportChallengeToZip(throws, settings) {
   md += `Generated on: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}\n\n`;
 
   md += `## Challenge Overview\n`;
-  md += `- **Cylinder Target:** ${targetCylinders} cylinders\n`;
+  md += `- **Challenge Target:** ${targetCylinders} pieces\n`;
   md += `- **Total Logged Throws:** ${totalThrows} (${Math.min(100, Math.round((totalThrows/targetCylinders)*100))}% complete)\n`;
   md += `- **Successful Throws:** ${successCount} (${successRate}% success rate)\n`;
   
@@ -85,7 +85,7 @@ export async function exportChallengeToZip(throws, settings) {
     const actualWeight = t.weightValue !== undefined ? `${t.weightValue} ${settings.globalUnit || 'lb'}` : `${category.weight || ''} ${settings.globalUnit || 'lb'}`;
     const notesArray = getNotesArray(t);
 
-    md += `### Cylinder #${index + 1} - ${t.dateThrown}\n`;
+    md += `### Piece #${index + 1} - ${t.dateThrown}\n`;
     md += `- **Weight Class:** ${category.name}\n`;
     md += `- **Logged Weight:** ${actualWeight}\n`;
     md += `- **Quality/Status:** ${t.status || 'Successful'}\n`;
@@ -93,7 +93,7 @@ export async function exportChallengeToZip(throws, settings) {
     if (notesArray.length > 0) {
       md += `- **Sticky Notes:**\n`;
       notesArray.forEach(n => {
-        md += `  - *[Stage: ${n.stage || 'General'}]* ${n.text}\n`;
+        md += `  - [${n.stage}] ${n.text} (${new Date(n.timestamp).toLocaleDateString()})\n`;
       });
       md += `\n`;
     } else {

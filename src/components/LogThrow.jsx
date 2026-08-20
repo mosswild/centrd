@@ -184,7 +184,7 @@ export default function LogThrow({ settings, user, onNavigateToHistory }) {
       }
     } catch (err) {
       console.error(err);
-      setError(err.message || 'Failed to save cylinder log. Please try again.');
+      setError(err.message || 'Failed to save piece log. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -197,7 +197,7 @@ export default function LogThrow({ settings, user, onNavigateToHistory }) {
           Wheel Session
         </span>
         <h1 className="serif-title" style={{ fontSize: '2.2rem', fontWeight: 700, marginTop: '0.2rem' }}>
-          Log Thrown Cylinder
+          Log Thrown Piece
         </h1>
         <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem' }}>
           Record your throw metrics and take notes on the shape, walls, or collapse reasons.
@@ -296,7 +296,7 @@ export default function LogThrow({ settings, user, onNavigateToHistory }) {
 
         {/* Camera / Photo Upload */}
         <div>
-          <label>Cylinder Image (e.g. Greenware stage)</label>
+          <label>Piece Photo (e.g. Greenware stage)</label>
           <input
             type="file"
             accept="image/*"

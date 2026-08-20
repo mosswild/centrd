@@ -1,11 +1,11 @@
 import React, { useState, useRef } from 'react';
 import { updateThrowLog, uploadThrowPhoto, deleteThrowLog } from '../db';
-import { Calendar, Trash2, Tag, Camera, Filter, Search, Image as ImageIcon, AlertCircle, RotateCcw } from 'lucide-react';
+import { Calendar, Trash2, Tag, Camera, Filter, Search, Image as ImageIcon, AlertCircle } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import PostItNotesStack from './PostItNotesStack';
 import ImageLightboxModal from './ImageLightboxModal';
 import { getNotesArray, formatNotesSummary, isSameStage, getAvailableStages } from '../utils/noteUtils';
-import { isThrowInChallenge } from '../utils/challengeUtils';
+import { isThrowInChallenge, getThrowChallenges } from '../utils/challengeUtils';
 
 export default function History({ throws, settings, user }) {
   const [selectedWeight, setSelectedWeight] = useState('all');
@@ -195,7 +195,7 @@ export default function History({ throws, settings, user }) {
   };
 
   const handleDeleteThrow = async (throwId) => {
-    if (window.confirm("Are you sure you want to delete this cylinder log? This cannot be undone.")) {
+    if (window.confirm("Are you sure you want to delete this pottery log? This cannot be undone.")) {
       try {
         await deleteThrowLog(throwId);
       } catch (err) {
@@ -205,19 +205,83 @@ export default function History({ throws, settings, user }) {
     }
   };
 
-  // Unique challenge names present in log entries
+  // Manage Challenge Tags Modal state
+  const [taggingState, setTaggingState] = useState({
+    isOpen: false,
+    item: null,
+    selectedTags: [],
+    customTagInput: ''
+  });
+
+  const handleOpenTagModal = (item) => {
+    const existing = getThrowChallenges(item);
+    setTaggingState({
+      isOpen: true,
+      item,
+      selectedTags: existing,
+      customTagInput: ''
+    });
+  };
+
+  const handleToggleTagInModal = (tagName) => {
+    setTaggingState(prev => {
+      const exists = prev.selectedTags.includes(tagName);
+      const newTags = exists
+        ? prev.selectedTags.filter(t => t !== tagName)
+        : [...prev.selectedTags, tagName];
+      return { ...prev, selectedTags: newTags };
+    });
+  };
+
+  const handleAddCustomTagInModal = () => {
+    const trimmed = taggingState.customTagInput.trim();
+    if (!trimmed) return;
+    if (!taggingState.selectedTags.includes(trimmed)) {
+      setTaggingState(prev => ({
+        ...prev,
+        selectedTags: [...prev.selectedTags, trimmed],
+        customTagInput: ''
+      }));
+    } else {
+      setTaggingState(prev => ({ ...prev, customTagInput: '' }));
+    }
+  };
+
+  const handleSaveTagsInModal = async () => {
+    if (!taggingState.item) return;
+    try {
+      await updateThrowLog(taggingState.item.id, {
+        challengeName: taggingState.selectedTags[0] || '',
+        challengeNames: taggingState.selectedTags
+      });
+      setTaggingState({ isOpen: false, item: null, selectedTags: [], customTagInput: '' });
+    } catch (err) {
+      console.error(err);
+      alert("Failed to update challenge tags.");
+    }
+  };
+
+  // Unique challenge names present across all logs, settings, and active tag modal selection
+  const allAvailableChallengeNames = Array.from(
+    new Set([
+      settings?.challengeName || '200 Piece Challenge',
+      ...throws.flatMap(t => getThrowChallenges(t)),
+      ...taggingState.selectedTags
+    ].filter(Boolean))
+  );
+
   const uniqueChallengeNames = Array.from(
-    new Set(throws.map(t => t.challengeName).filter(Boolean))
+    new Set(throws.flatMap(t => getThrowChallenges(t)).filter(Boolean))
   );
 
   // Filter logic
-  const challengeStartDate = settings?.challengeStartDate || '';
   const filteredThrows = throws.filter(t => {
     let matchesChallenge = true;
+    const itemChallenges = getThrowChallenges(t);
     if (challengeFilter === 'current') {
-      matchesChallenge = !challengeStartDate || isThrowInChallenge(t, challengeStartDate);
+      matchesChallenge = isThrowInChallenge(t, settings?.challengeName);
     } else if (challengeFilter !== 'all') {
-      matchesChallenge = (t.challengeName === challengeFilter);
+      matchesChallenge = itemChallenges.includes(challengeFilter);
     }
 
     const matchesWeight = selectedWeight === 'all' || t.weightClass === selectedWeight;
@@ -250,7 +314,7 @@ export default function History({ throws, settings, user }) {
           Throwing Logs
         </h1>
         <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem' }}>
-          Swipe or browse your past cylinders. Update them with bisqued or glazed photos as they progress.
+          Swipe or browse your past pottery pieces. Update them with bisqued or glazed photos as they progress.
         </p>
       </div>
 
@@ -285,19 +349,18 @@ export default function History({ throws, settings, user }) {
           />
         </div>
 
-        {/* Filter Challenge Cycle */}
-        {(challengeStartDate || uniqueChallengeNames.length > 0) && (
+        {/* Filter Tags */}
+        {uniqueChallengeNames.length > 0 && (
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <RotateCcw size={14} style={{ color: 'var(--terracotta)' }} />
             <select
               value={challengeFilter}
               onChange={(e) => setChallengeFilter(e.target.value)}
               style={{ padding: '0.5rem 2rem 0.5rem 0.75rem', fontSize: '0.9rem', width: 'auto', borderRadius: '10px' }}
             >
-              <option value="all">All Challenges ({throws.length})</option>
-              {challengeStartDate && <option value="current">Active Challenge Only</option>}
+              <option value="all">All Tags ({throws.length})</option>
+              <option value="current">Active Challenge Tag ({settings?.challengeName || 'Active'})</option>
               {uniqueChallengeNames.map(cName => (
-                <option key={cName} value={cName}>Challenge: {cName}</option>
+                <option key={cName} value={cName}>Tag: {cName}</option>
               ))}
             </select>
           </div>
@@ -370,7 +433,7 @@ export default function History({ throws, settings, user }) {
       {filteredThrows.length === 0 ? (
         <div className="glass" style={{ textAlign: 'center', padding: '4rem 2rem', borderRadius: '24px', color: 'var(--text-secondary)' }}>
           <ImageIcon size={48} style={{ color: 'var(--border-color)', marginBottom: '1rem' }} />
-          <p style={{ fontSize: '1.1rem', fontWeight: 600 }}>No cylinders matched your filters.</p>
+          <p style={{ fontSize: '1.1rem', fontWeight: 600 }}>No pieces matched your filters.</p>
           <p style={{ fontSize: '0.9rem' }}>Go log a throw or adjust your search filters!</p>
         </div>
       ) : (
@@ -414,21 +477,27 @@ export default function History({ throws, settings, user }) {
                         }}>
                           {item.status || 'Successful'}
                         </span>
-                        {item.challengeName && (
-                          <span style={{
-                            fontSize: '0.72rem',
-                            fontWeight: 600,
-                            color: 'var(--terracotta)',
-                            background: 'var(--terracotta-light)',
-                            padding: '0.15rem 0.55rem',
-                            borderRadius: '100px',
-                            display: 'inline-block',
-                            marginTop: '0.25rem',
-                            marginLeft: '0.35rem'
-                          }}>
-                            {item.challengeName}
+                        {getThrowChallenges(item).map((cTag, cIdx) => (
+                          <span
+                            key={cIdx}
+                            onClick={() => handleOpenTagModal(item)}
+                            title="Click to manage challenge tags"
+                            style={{
+                              fontSize: '0.72rem',
+                              fontWeight: 600,
+                              color: 'var(--terracotta)',
+                              background: 'var(--terracotta-light)',
+                              padding: '0.15rem 0.55rem',
+                              borderRadius: '100px',
+                              display: 'inline-block',
+                              marginTop: '0.25rem',
+                              marginLeft: '0.35rem',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            🏷️ {cTag}
                           </span>
-                        )}
+                        ))}
                       </div>
                       <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
                         <Calendar size={12} />
@@ -631,6 +700,133 @@ export default function History({ throws, settings, user }) {
                 </div>
               );
             })}
+          </div>
+        </div>
+      )}
+
+      {/* Manage Challenge Tags Modal */}
+      {taggingState.isOpen && taggingState.item && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0,0,0,0.6)',
+          backdropFilter: 'blur(6px)',
+          zIndex: 99999,
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          padding: '1rem'
+        }} onClick={() => setTaggingState({ isOpen: false, item: null, selectedTags: [], customTagInput: '' })}>
+          <div className="glass animate-scale-up" style={{
+            background: 'var(--bg-primary)',
+            borderRadius: '24px',
+            maxWidth: '460px',
+            width: '100%',
+            padding: '1.75rem',
+            boxShadow: '0 20px 40px rgba(0,0,0,0.3)',
+            border: '1px solid var(--border-color)'
+          }} onClick={(e) => e.stopPropagation()}>
+            <h3 className="serif-title" style={{ fontSize: '1.25rem', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <Tag size={20} style={{ color: 'var(--terracotta)' }} />
+              Manage Entry Tags
+            </h3>
+            <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginBottom: '1.25rem' }}>
+              Select tags for this entry (challenges, clay types, or studio notes):
+            </p>
+
+            {/* List of Available Existing Challenges */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', marginBottom: '1.25rem', maxHeight: '200px', overflowY: 'auto' }}>
+              {allAvailableChallengeNames.length === 0 ? (
+                <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontStyle: 'italic' }}>
+                  No existing tags found. Create one below!
+                </div>
+              ) : (
+                allAvailableChallengeNames.map((cName) => {
+                  const isChecked = taggingState.selectedTags.includes(cName);
+                  return (
+                    <label
+                      key={cName}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justify: 'space-between',
+                        padding: '0.65rem 0.85rem',
+                        borderRadius: '12px',
+                        background: isChecked ? 'var(--terracotta-light)' : 'var(--bg-secondary)',
+                        border: isChecked ? '1px solid var(--terracotta)' : '1px solid var(--border-color)',
+                        cursor: 'pointer',
+                        transition: 'all 0.15s ease'
+                      }}
+                    >
+                      <span style={{ fontWeight: 600, fontSize: '0.88rem', color: isChecked ? 'var(--terracotta)' : 'var(--text-primary)' }}>
+                        🏷️ {cName}
+                      </span>
+                      <input
+                        type="checkbox"
+                        checked={isChecked}
+                        onChange={() => handleToggleTagInModal(cName)}
+                        style={{ width: '18px', height: '18px', accentColor: 'var(--terracotta)', cursor: 'pointer' }}
+                      />
+                    </label>
+                  );
+                })
+              )}
+            </div>
+
+            {/* Inline Input to Add Custom Tag */}
+            <div style={{ marginBottom: '1.5rem' }}>
+              <label style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '0.35rem' }}>
+                + Add Custom Tag
+              </label>
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <input
+                  type="text"
+                  placeholder="e.g. Winter Mug Sprint"
+                  value={taggingState.customTagInput}
+                  onChange={(e) => setTaggingState(prev => ({ ...prev, customTagInput: e.target.value }))}
+                  onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddCustomTagInModal(); } }}
+                  style={{
+                    flex: 1,
+                    padding: '0.55rem 0.85rem',
+                    borderRadius: '10px',
+                    border: '1px solid var(--border-color)',
+                    background: 'var(--bg-secondary)',
+                    color: 'var(--text-primary)',
+                    fontSize: '0.85rem'
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={handleAddCustomTagInModal}
+                  disabled={!taggingState.customTagInput.trim()}
+                  className="btn btn-secondary"
+                  style={{ padding: '0.55rem 0.85rem', fontSize: '0.82rem' }}
+                >
+                  Add
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Footer Actions */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => setTaggingState({ isOpen: false, item: null, selectedTags: [], customTagInput: '' })}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={handleSaveTagsInModal}
+              >
+                Save Tags
+              </button>
+            </div>
           </div>
         </div>
       )}

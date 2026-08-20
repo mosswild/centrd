@@ -90,10 +90,10 @@ export default function App() {
               cadencePeriod: "week",
               potteryStages: ['Wet Clay', 'Trimmed', 'Glaze Application', 'Fired'],
               weightCategories: [
-                { id: "1lb", name: "1 lb Cylinder", weight: 1, unit: "lb", targetCount: 100 },
-                { id: "2lb", name: "2 lb Cylinder", weight: 2, unit: "lb", targetCount: 50 },
-                { id: "3lb", name: "3 lb Cylinder", weight: 3, unit: "lb", targetCount: 30 },
-                { id: "5lb", name: "5 lb Cylinder", weight: 5, unit: "lb", targetCount: 20 }
+                { id: "1lb", name: "1 lb Piece", weight: 1, unit: "lb", targetCount: 100 },
+                { id: "2lb", name: "2 lb Piece", weight: 2, unit: "lb", targetCount: 50 },
+                { id: "3lb", name: "3 lb Piece", weight: 3, unit: "lb", targetCount: 30 },
+                { id: "5lb", name: "5 lb Piece", weight: 5, unit: "lb", targetCount: 20 }
               ]
             };
           }
@@ -172,7 +172,7 @@ export default function App() {
   const renderActiveView = () => {
     switch (currentView) {
       case 'dashboard':
-        return <Dashboard throws={throws} settings={settings} user={user} />;
+        return <Dashboard throws={throws} settings={settings} user={user} onSettingsUpdate={setSettings} />;
       case 'log':
         return <LogThrow settings={settings} user={user} onNavigateToHistory={() => setCurrentView('history')} />;
       case 'history':
@@ -180,7 +180,7 @@ export default function App() {
       case 'settings':
         return <Settings settings={settings} throws={throws} user={user} onSettingsUpdate={setSettings} />;
       default:
-        return <Dashboard throws={throws} settings={settings} user={user} />;
+        return <Dashboard throws={throws} settings={settings} user={user} onSettingsUpdate={setSettings} />;
     }
   };
 
