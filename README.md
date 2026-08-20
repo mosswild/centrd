@@ -10,15 +10,17 @@ This version runs on a **100% self-hosted, local-first fullstack architecture**,
 
 ## ✨ Features
 
-* **Local Potter Profiles:** Create multiple potter accounts (with custom names, studios, and 12 pottery stamp avatars) to share a single server on multiple devices with 100% data isolation.
-* **Custom Challenge Names & Historical Tagging:** Give your challenge cycles custom titles (e.g. *"Summer 200 Mug Sprint"*, *"Fall Dinnerware Series"*) and view active start timestamps. Every cylinder entry is tagged with its challenge name for long-term historical context.
+* **Local Potter Profiles & Data Isolation:** Create multiple potter accounts (with custom names, studios, and 12 pottery emoji stamp avatars) with 100% data isolation on a single shared home server.
+* **Custom Challenge Names & Historical Tagging:** Give your challenge cycles custom titles (e.g. *"Summer 200 Mug Sprint"*, *"Fall Dinnerware Series"*) with active start timestamps. Every cylinder entry is tagged with its challenge name for long-term historical context.
 * **Challenge Progress Reset:** Start a fresh challenge cycle anytime with a single click — resetting progress to 0 while preserving 100% of past throwing entries, sticky notes, and photos in your history.
 * **Pure Studio Logbook Mode:** Turn off Challenge Mode in settings to use Centrd as a peaceful, pressure-free studio diary with an unfiltered studio overview dashboard.
-* **Flexible Decimal Weights:** Log throws using precise decimal weights (e.g. `1.3 lb` or `0.8 kg`). The app automatically maps entries to the closest whole-number challenge class while preserving the exact decimal value in history logs.
-* **Global Units:** Globally configure your dashboard and inputs to display in Pounds (`lb`) or Kilograms (`kg`).
-* **Interactive Challenges & Pacing:** Track pacing strategies including custom target dates or daily/weekly/monthly cadence targets.
-* **Stage Progression & Gallery:** Log throw photos and update them chronologically through pottery stages (*Wet Clay*, *Leather Hard*, *Bone Dry*, *Bisqueware*, *Glazed*, and *Finished Glaze*).
-* **Real-Time Cross-Device Sync:** Built-in Server-Sent Events (SSE) automatically stream updates between all connected devices in real-time. Log a throw on your phone in the studio, and watch the dashboard update instantly on your laptop.
+* **Interactive Sticky Notes:** Attach stage-specific sticky notes (e.g. *Wet Clay*, *Trimmed*, *Glaze Application*, *Fired*) to any entry. Notes are color-coded and organized in an interactive sticky-note stack on each entry card.
+* **Full-Screen Lightbox & Stage Remapping:** View photos in high-res lightbox modals with instant stage remapping (reassign a photo's stage from Wet Clay to Bisque or Glazed without re-uploading).
+* **Customizable Pottery Stages:** Add custom pottery stages (e.g. *Underglazed*, *Wood Fired*, *Raku Fired*) or delete/remap existing stages.
+* **Custom Weight Classes & Class Targets:** Define custom weight categories with specific weights, names, units, and target counts.
+* **Flexible Decimal Weights & Global Units:** Log throws using precise decimal weights (e.g. `1.3 lb` or `0.8 kg`). The app automatically maps entries to the closest whole-number challenge class while preserving the exact decimal value in history. Globally switch between Pounds (`lb`) and Kilograms (`kg`).
+* **Pacing Strategies & Deadlines:** Track pacing strategies including custom target dates or daily/weekly/monthly cadence targets.
+* **Real-Time Cross-Device Sync:** Built-in Server-Sent Events (SSE) automatically stream updates between all connected phones, tablets, and computers on your home network in real-time.
 * **ZIP Logbook & Settings Backup:** Export your logs, metadata, and photos into a structured markdown journal and ZIP archive for offline backups, or export/import custom challenge configurations.
 
 ---
