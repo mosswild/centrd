@@ -1,8 +1,12 @@
+<p align="center">
+  <img src="./public/favicon.svg" width="120" height="120" alt="Centrd Logo" />
+</p>
+
 # 🏺 Centrd: A Throwing Diary
 
 > *Find your center. Challenge your limits. Log your growth.*
 
-**Centrd** is a **free, open-source, and self-hostable** web-based diary designed for potters tracking their cylinder throw counts, stages, and challenge milestones (like the 200 Cylinder challenge). 
+**Centrd** is a **free, open-source, and self-hostable** web-based diary designed for potters tracking their throw counts, stages, and challenge milestones (like the 200 Cylinder or 100 Bowl challenge). 
 
 It runs on a **100% self-hosted, local-first architecture**, meaning all potter profiles, throw logs, configurations, and photos stay saved on your own home server or local machine with complete privacy.
 
@@ -13,11 +17,14 @@ It runs on a **100% self-hosted, local-first architecture**, meaning all potter 
 * **Free, Open-Source & Self-Hostable:** 100% free and private software that you control. Run it on your home server (Synology NAS, Raspberry Pi, Docker) or local computer without cloud subscriptions or third-party trackers.
 * **Multiple Potter Profiles & Studio Hosting:** Support multiple potter accounts with 100% data isolation on a single shared server — ideal for households with multiple potters or shared studio servers.
 * **Custom Emoji Avatars:** Personalize your potter profile by choosing from default avatars or using your device's emoji keyboard to set any symbol you like.
+* **iOS Safari Home Screen App & PWA Support:** Add Centrd directly to your iPhone or iPad home screen via Safari ("Add to Home Screen") for a full-screen, native app experience complete with custom clay touch icons and status bar styling.
+* **Multiple Saved Challenges & Active Selector:** Create, save, and switch between multiple named challenge series (e.g. *"Spring 100 Bowl Challenge"*, *"Fall 200 Cylinder Sprint"*). Easily switch your active challenge, rename challenges in place, or create new ones right from Settings without losing any past progress.
+* **Tag-Based Challenge Progress & Multi-Tagging:** Attach multiple challenge tags to any piece. Challenges track progress purely via tags, allowing a single entry to count toward multiple active or historical challenges simultaneously.
+* **In-Place Challenge Renaming & Log Tag Migration:** Rename existing challenges anytime in Settings. Changing a challenge's title automatically updates all historical throw logs tagged with the old title so past progress stays perfectly synced.
+* **Generic Pottery & Cylinder Targets:** Flexible target configuration supporting all pottery shapes (cylinders, bowls, mugs, plates, vases, pitchers) with custom weight classes and total challenge count goals.
 * **Shareable Challenge Settings:** Export custom challenge configurations to JSON and share them with friends or studio mates so everyone can compete in the exact same challenge.
 * **ZIP Logbook Backup & Rebuild:** Export your complete throwing log, sticky notes, and high-res photos into a structured markdown and ZIP archive. Import any exported ZIP backup file to rebuild your full journal and photo gallery on a new server or machine.
-* **Custom Challenge Names & Historical Tagging:** Give your challenge cycles custom titles (e.g. *"Summer 200 Mug Sprint"*, *"Fall Dinnerware Series"*) with active start timestamps. Every cylinder entry is tagged with its challenge name for long-term historical context.
-* **Challenge Progress Reset:** Start a fresh challenge cycle anytime with a single click — resetting progress to 0 while preserving 100% of past throwing entries, sticky notes, and photos in your history.
-* **Pure Studio Logbook Mode:** Turn off Challenge Mode in settings to use Centrd as a peaceful, pressure-free studio diary with an unfiltered studio overview dashboard.
+* **Pure Studio Logbook Mode (Disable Challenges Entirely):** Turn off challenges entirely with a single toggle in Settings to use Centrd as a peaceful, pressure-free studio diary with an unfiltered studio overview dashboard.
 * **Interactive Sticky Notes:** Attach stage-specific sticky notes (e.g. *Wet Clay*, *Trimmed*, *Glaze Application*, *Fired*) to any entry. Notes are color-coded and organized in an interactive sticky-note stack on each entry card.
 * **Full-Screen Lightbox & Stage Remapping:** View photos in high-res lightbox modals with instant stage remapping (reassign a photo's stage from Wet Clay to Bisque or Glazed without re-uploading).
 * **Customizable Pottery Stages:** Add custom pottery stages (e.g. *Underglazed*, *Wood Fired*, *Raku Fired*) or delete/remap existing stages.
