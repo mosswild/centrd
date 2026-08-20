@@ -47,6 +47,93 @@ export default function Settings({ settings, throws = [], user, onSettingsUpdate
   const [importingZip, setImportingZip] = useState(false);
   const [importProgress, setImportProgress] = useState({ current: 0, total: 0 });
 
+  // Inline Challenge Rename & Create State
+  const [challengeMode, setChallengeMode] = useState('view'); // 'view' | 'rename' | 'create'
+  const [challengeInput, setChallengeInput] = useState('');
+  const [challengeActionLoading, setChallengeActionLoading] = useState(false);
+
+  const handleConfirmRename = async () => {
+    const newName = challengeInput.trim();
+    if (!newName) return;
+    if (newName.toLowerCase() === challengeName.toLowerCase()) {
+      setChallengeMode('view');
+      return;
+    }
+    setChallengeActionLoading(true);
+    try {
+      let updatedSettings = renameChallengeInSettings(settings, challengeName, newName);
+      await renameChallengeInThrows(user.id, challengeName, newName, throws);
+
+      const computedTarget = weightCategories.reduce((sum, cat) => sum + (Number(cat.targetCount) || 0), 0);
+      updatedSettings = {
+        ...updatedSettings,
+        challengeName: newName,
+        targetCylinders: computedTarget,
+        hasTimeLimit: scheduleType === 'deadline',
+        scheduleType,
+        startDate,
+        endDate: scheduleType === 'deadline' ? endDate : '',
+        cadenceFrequency: Number(cadenceFrequency),
+        cadencePeriod,
+        weightCategories,
+        globalUnit,
+        potteryStages
+      };
+
+      await saveSettings(user.id, updatedSettings);
+      setChallengeName(newName);
+      if (onSettingsUpdate) onSettingsUpdate(updatedSettings);
+      setChallengeMode('view');
+    } catch (err) {
+      console.error(err);
+      alert("Failed to rename challenge: " + err.message);
+    } finally {
+      setChallengeActionLoading(false);
+    }
+  };
+
+  const handleConfirmCreate = async () => {
+    const newName = challengeInput.trim();
+    if (!newName) return;
+    setChallengeActionLoading(true);
+    try {
+      const currentSettingsSnapshot = {
+        ...settings,
+        enableChallenge,
+        challengeName,
+        targetCylinders: weightCategories.reduce((sum, cat) => sum + (Number(cat.targetCount) || 0), 0),
+        scheduleType,
+        hasTimeLimit: scheduleType === 'deadline',
+        startDate,
+        endDate,
+        cadenceFrequency: Number(cadenceFrequency) || 3,
+        cadencePeriod,
+        weightCategories,
+        globalUnit,
+        potteryStages
+      };
+
+      const merged = switchActiveChallengeInSettings(currentSettingsSnapshot, newName);
+      setChallengeName(merged.challengeName);
+      setTargetCylinders(merged.targetCylinders);
+      setScheduleType(merged.scheduleType);
+      setStartDate(merged.startDate);
+      setEndDate(merged.endDate);
+      setCadenceFrequency(merged.cadenceFrequency);
+      setCadencePeriod(merged.cadencePeriod);
+      setWeightCategories(merged.weightCategories);
+
+      await saveSettings(user.id, merged);
+      if (onSettingsUpdate) onSettingsUpdate(merged);
+      setChallengeMode('view');
+    } catch (err) {
+      console.error(err);
+      alert("Failed to create challenge: " + err.message);
+    } finally {
+      setChallengeActionLoading(false);
+    }
+  };
+
   const handleGlobalUnitChange = (newUnit) => {
     setGlobalUnit(newUnit);
     const updated = weightCategories.map(cat => ({
@@ -633,101 +720,194 @@ export default function Settings({ settings, throws = [], user, onSettingsUpdate
           {enableChallenge ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
               <div>
-                <label htmlFor="challengeName">Active Challenge Name</label>
-                <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-                  <input
-                    id="challengeName"
-                    type="text"
-                    placeholder="e.g. Fall 200 Piece Sprint"
-                    value={challengeName}
-                    onChange={(e) => setChallengeName(e.target.value)}
-                    style={{ flex: 1, minWidth: '200px' }}
-                  />
-                  <select
-                    value={availableChallengeNames.includes(challengeName) ? challengeName : '__CUSTOM__'}
-                    onChange={async (e) => {
-                      let targetName = e.target.value;
-                      if (targetName === '__CREATE_NEW__') {
-                        const newName = window.prompt("Enter a name for your new challenge:", "Fall 100 Speedrun");
-                        if (!newName || !newName.trim()) return;
-                        targetName = newName.trim();
-                      } else if (targetName === '__CUSTOM__') {
-                        return;
-                      }
+                <label>Active Challenge</label>
+                {challengeMode === 'view' && (
+                  <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                    <select
+                      value={availableChallengeNames.includes(challengeName) ? challengeName : '__CUSTOM__'}
+                      onChange={async (e) => {
+                        const targetName = e.target.value;
+                        if (targetName === '__CREATE_NEW__') {
+                          setChallengeInput('');
+                          setChallengeMode('create');
+                          return;
+                        } else if (targetName === '__CUSTOM__') {
+                          return;
+                        }
 
-                      // Snapshot current state into settings object before switching
-                      const currentSettingsSnapshot = {
-                        ...settings,
-                        enableChallenge,
-                        challengeName,
-                        targetCylinders: weightCategories.reduce((sum, cat) => sum + (Number(cat.targetCount) || 0), 0),
-                        scheduleType,
-                        hasTimeLimit: scheduleType === 'deadline',
-                        startDate,
-                        endDate,
-                        cadenceFrequency: Number(cadenceFrequency) || 3,
-                        cadencePeriod,
-                        weightCategories,
-                        globalUnit,
-                        potteryStages
-                      };
+                        // Snapshot current state into settings object before switching
+                        const currentSettingsSnapshot = {
+                          ...settings,
+                          enableChallenge,
+                          challengeName,
+                          targetCylinders: weightCategories.reduce((sum, cat) => sum + (Number(cat.targetCount) || 0), 0),
+                          scheduleType,
+                          hasTimeLimit: scheduleType === 'deadline',
+                          startDate,
+                          endDate,
+                          cadenceFrequency: Number(cadenceFrequency) || 3,
+                          cadencePeriod,
+                          weightCategories,
+                          globalUnit,
+                          potteryStages
+                        };
 
-                      const merged = switchActiveChallengeInSettings(currentSettingsSnapshot, targetName);
-                      setChallengeName(merged.challengeName);
-                      setTargetCylinders(merged.targetCylinders);
-                      setScheduleType(merged.scheduleType);
-                      setStartDate(merged.startDate);
-                      setEndDate(merged.endDate);
-                      setCadenceFrequency(merged.cadenceFrequency);
-                      setCadencePeriod(merged.cadencePeriod);
-                      setWeightCategories(merged.weightCategories);
-
-                      try {
-                        await saveSettings(user.id, merged);
-                        if (onSettingsUpdate) onSettingsUpdate(merged);
-                      } catch (err) {
-                        console.error(err);
-                      }
-                    }}
-                    style={{ minWidth: '180px' }}
-                  >
-                    <option value="__CUSTOM__">Switch Saved Challenge...</option>
-                    {availableChallengeNames.map(cName => (
-                      <option key={cName} value={cName}>🏷️ {cName}</option>
-                    ))}
-                    <option value="__CREATE_NEW__">+ Create New Challenge...</option>
-                  </select>
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      if (window.confirm(`Are you sure you want to delete the challenge "${challengeName}"?`)) {
-                        const updatedSettings = deleteChallengeFromSettings(settings, challengeName);
-                        setChallengeName(updatedSettings.challengeName);
-                        setTargetCylinders(updatedSettings.targetCylinders);
-                        setScheduleType(updatedSettings.scheduleType);
-                        setStartDate(updatedSettings.startDate);
-                        setEndDate(updatedSettings.endDate);
-                        setCadenceFrequency(updatedSettings.cadenceFrequency);
-                        setCadencePeriod(updatedSettings.cadencePeriod);
-                        setWeightCategories(updatedSettings.weightCategories);
+                        const merged = switchActiveChallengeInSettings(currentSettingsSnapshot, targetName);
+                        setChallengeName(merged.challengeName);
+                        setTargetCylinders(merged.targetCylinders);
+                        setScheduleType(merged.scheduleType);
+                        setStartDate(merged.startDate);
+                        setEndDate(merged.endDate);
+                        setCadenceFrequency(merged.cadenceFrequency);
+                        setCadencePeriod(merged.cadencePeriod);
+                        setWeightCategories(merged.weightCategories);
 
                         try {
-                          await saveSettings(user.id, updatedSettings);
-                          if (onSettingsUpdate) onSettingsUpdate(updatedSettings);
+                          await saveSettings(user.id, merged);
+                          if (onSettingsUpdate) onSettingsUpdate(merged);
                         } catch (err) {
                           console.error(err);
                         }
-                      }
-                    }}
-                    className="btn btn-secondary"
-                    style={{ color: 'var(--collapse)', borderColor: 'var(--collapse)', padding: '0.5rem 0.85rem', fontSize: '0.82rem' }}
-                    title="Delete this challenge"
-                  >
-                    <Trash2 size={14} /> Delete Challenge
-                  </button>
-                </div>
-                <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'block', marginTop: '0.25rem' }}>
-                  Select from configured challenges or type a new challenge name. Switching challenges restores its specific targets and start timestamp.
+                      }}
+                      style={{ flex: 1, minWidth: '200px', fontWeight: 700 }}
+                    >
+                      {availableChallengeNames.map(cName => (
+                        <option key={cName} value={cName}>🏷️ {cName}</option>
+                      ))}
+                      {!availableChallengeNames.includes(challengeName) && (
+                        <option value="__CUSTOM__">🏷️ {challengeName}</option>
+                      )}
+                      <option value="__CREATE_NEW__">+ Create New Challenge...</option>
+                    </select>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setChallengeInput(challengeName);
+                        setChallengeMode('rename');
+                      }}
+                      className="btn btn-secondary"
+                      style={{ padding: '0.5rem 0.85rem', fontSize: '0.82rem' }}
+                      title="Rename this challenge"
+                    >
+                      <Edit2 size={14} /> Rename
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        if (window.confirm(`Are you sure you want to delete the challenge "${challengeName}"?`)) {
+                          const updatedSettings = deleteChallengeFromSettings(settings, challengeName);
+                          setChallengeName(updatedSettings.challengeName);
+                          setTargetCylinders(updatedSettings.targetCylinders);
+                          setScheduleType(updatedSettings.scheduleType);
+                          setStartDate(updatedSettings.startDate);
+                          setEndDate(updatedSettings.endDate);
+                          setCadenceFrequency(updatedSettings.cadenceFrequency);
+                          setCadencePeriod(updatedSettings.cadencePeriod);
+                          setWeightCategories(updatedSettings.weightCategories);
+
+                          try {
+                            await saveSettings(user.id, updatedSettings);
+                            if (onSettingsUpdate) onSettingsUpdate(updatedSettings);
+                          } catch (err) {
+                            console.error(err);
+                          }
+                        }
+                      }}
+                      className="btn btn-secondary"
+                      style={{ color: 'var(--collapse)', borderColor: 'var(--collapse)', padding: '0.5rem 0.85rem', fontSize: '0.82rem' }}
+                      title="Delete this challenge"
+                    >
+                      <Trash2 size={14} /> Delete
+                    </button>
+                  </div>
+                )}
+
+                {challengeMode === 'rename' && (
+                  <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }} className="animate-pop-in">
+                    <input
+                      type="text"
+                      value={challengeInput}
+                      onChange={(e) => setChallengeInput(e.target.value)}
+                      placeholder="New challenge name"
+                      style={{ flex: 1, minWidth: '200px', fontWeight: 600 }}
+                      autoFocus
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleConfirmRename();
+                        } else if (e.key === 'Escape') {
+                          setChallengeMode('view');
+                        }
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={handleConfirmRename}
+                      disabled={challengeActionLoading}
+                      className="btn btn-primary"
+                      style={{ padding: '0.5rem 0.85rem', fontSize: '0.82rem' }}
+                    >
+                      {challengeActionLoading ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />} Save
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setChallengeMode('view')}
+                      disabled={challengeActionLoading}
+                      className="btn btn-secondary"
+                      style={{ padding: '0.5rem 0.85rem', fontSize: '0.82rem' }}
+                    >
+                      <X size={14} /> Cancel
+                    </button>
+                  </div>
+                )}
+
+                {challengeMode === 'create' && (
+                  <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }} className="animate-pop-in">
+                    <input
+                      type="text"
+                      value={challengeInput}
+                      onChange={(e) => setChallengeInput(e.target.value)}
+                      placeholder="e.g. Fall 100 Speedrun"
+                      style={{ flex: 1, minWidth: '200px', fontWeight: 600 }}
+                      autoFocus
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleConfirmCreate();
+                        } else if (e.key === 'Escape') {
+                          setChallengeMode('view');
+                        }
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={handleConfirmCreate}
+                      disabled={challengeActionLoading}
+                      className="btn btn-primary"
+                      style={{ padding: '0.5rem 0.85rem', fontSize: '0.82rem' }}
+                    >
+                      {challengeActionLoading ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />} Create Challenge
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setChallengeMode('view')}
+                      disabled={challengeActionLoading}
+                      className="btn btn-secondary"
+                      style={{ padding: '0.5rem 0.85rem', fontSize: '0.82rem' }}
+                    >
+                      <X size={14} /> Cancel
+                    </button>
+                  </div>
+                )}
+
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'block', marginTop: '0.35rem' }}>
+                  {challengeMode === 'create'
+                    ? 'Type a title for your new challenge and click Create.'
+                    : challengeMode === 'rename'
+                    ? 'Type a new title to rename your active challenge.'
+                    : 'Select from configured challenges, click Rename to customize the title, or choose + Create New Challenge.'}
                 </span>
               </div>
 
@@ -1033,7 +1213,7 @@ export default function Settings({ settings, throws = [], user, onSettingsUpdate
         </div>
 
         {/* Pottery Stages Manager Card */}
-        <div className="glass" style={{ padding: '1.5rem', borderRadius: '20px', marginBottom: '2rem' }}>
+        <div className="glass" style={{ padding: '1.5rem', borderRadius: '20px', marginBottom: '1rem' }}>
           <div style={{ marginBottom: '1.25rem' }}>
             <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--terracotta)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
               Lifecycle Config
@@ -1231,7 +1411,7 @@ export default function Settings({ settings, throws = [], user, onSettingsUpdate
 
         {/* Backup & Restore ZIP Log */}
         <div className="glass" style={{
-          marginTop: '2rem',
+          marginTop: '0.25rem',
           padding: '1.5rem',
           borderRadius: '20px',
           border: '1px dashed var(--border-color)',
