@@ -2,4 +2,5 @@
   <circle cx="50" cy="50" r="46" fill="#c96f53" />
   <path d="M 72 32 A 30 30 0 1 0 72 68" fill="none" stroke="#fbf9f6" stroke-width="8" stroke-linecap="round" />
   <path d="M 64 38 A 20 20 0 1 0 64 62" fill="none" stroke="#fbf9f6" stroke-width="5" stroke-linecap="round" opacity="0.6" />
+  <circle cx="76" cy="50" r="14" fill="#e6c594" stroke="#c96f53" stroke-width="2" />
 </svg>
