@@ -15,6 +15,7 @@ It runs on a **100% self-hosted, local-first architecture**, meaning all potter 
 ## ✨ Features
 
 * **Free, Open-Source & Self-Hostable:** 100% free and private software that you control. Run it on your home server (Synology NAS, Raspberry Pi, Docker) or local computer without cloud subscriptions or third-party trackers.
+* **No Ads, No Subscriptions, No "Pro" Versions:** All features are available to all users for free — no hidden costs or premium tiers. And if you want to make changes, fork it and build your own version!
 * **Multiple Potter Profiles & Studio Hosting:** Support multiple potter accounts with 100% data isolation on a single shared server — ideal for households with multiple potters or shared studio servers.
 * **Custom Emoji Avatars:** Personalize your potter profile by choosing from default avatars or using your device's emoji keyboard to set any symbol you like.
 * **iOS Safari Home Screen App & PWA Support:** Add Centrd directly to your iPhone or iPad home screen via Safari ("Add to Home Screen") for a full-screen, native app experience complete with custom clay touch icons and status bar styling.
