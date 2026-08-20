@@ -371,6 +371,11 @@ app.use('/centrd/api', apiRouter);
 const DIST_DIR = path.join(__dirname, '../dist');
 app.use('/centrd', express.static(DIST_DIR));
 
+// Serve root favicon.svg for self-hosted domain roots
+app.get('/favicon.svg', (req, res) => {
+  res.sendFile(path.join(DIST_DIR, 'favicon.svg'));
+});
+
 // Base route redirect
 app.get('/', (req, res) => {
   res.redirect('/centrd/');
