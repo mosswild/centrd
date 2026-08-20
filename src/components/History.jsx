@@ -481,7 +481,7 @@ export default function History({ throws, settings, user }) {
                           <span
                             key={cIdx}
                             onClick={() => handleOpenTagModal(item)}
-                            title="Click to manage challenge tags"
+                            title="Click to manage tags"
                             style={{
                               fontSize: '0.72rem',
                               fontWeight: 600,
@@ -498,6 +498,29 @@ export default function History({ throws, settings, user }) {
                             🏷️ {cTag}
                           </span>
                         ))}
+                        <button
+                          type="button"
+                          onClick={() => handleOpenTagModal(item)}
+                          title="Manage Tags for this entry"
+                          style={{
+                            fontSize: '0.72rem',
+                            fontWeight: 600,
+                            color: getThrowChallenges(item).length > 0 ? 'var(--text-secondary)' : 'var(--terracotta)',
+                            background: getThrowChallenges(item).length > 0 ? 'var(--bg-secondary)' : 'var(--terracotta-light)',
+                            border: '1px dashed var(--border-color)',
+                            padding: '0.15rem 0.55rem',
+                            borderRadius: '100px',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '0.25rem',
+                            marginTop: '0.25rem',
+                            marginLeft: '0.35rem',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          <Tag size={11} />
+                          {getThrowChallenges(item).length > 0 ? '+ Tag' : '+ Add Tag'}
+                        </button>
                       </div>
                       <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
                         <Calendar size={12} />
@@ -679,8 +702,33 @@ export default function History({ throws, settings, user }) {
                     <PostItNotesStack throwItem={item} activeStage={activeStage} settings={settings} onUpdateNotes={handleUpdateNotes} />
                   </div>
 
-                  {/* Delete Button */}
-                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1rem', borderTop: '1px solid var(--border-color)', paddingTop: '0.75rem' }}>
+                  {/* Card Actions Footer */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1rem', borderTop: '1px solid var(--border-color)', paddingTop: '0.75rem' }}>
+                    <button
+                      type="button"
+                      onClick={() => handleOpenTagModal(item)}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: 'var(--text-secondary)',
+                        cursor: 'pointer',
+                        padding: '0.25rem 0.5rem',
+                        fontSize: '0.78rem',
+                        fontWeight: 600,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.35rem',
+                        borderRadius: '6px',
+                        transition: 'all 0.2s'
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.color = 'var(--terracotta)'}
+                      onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-secondary)'}
+                      title="Manage Tags"
+                    >
+                      <Tag size={14} />
+                      <span>{getThrowChallenges(item).length > 0 ? `${getThrowChallenges(item).length} Tag(s)` : 'Add Tags'}</span>
+                    </button>
+
                     <button
                       onClick={() => handleDeleteThrow(item.id)}
                       style={{
@@ -693,6 +741,7 @@ export default function History({ throws, settings, user }) {
                       }}
                       onMouseEnter={(e) => e.target.style.color = 'var(--collapse)'}
                       onMouseLeave={(e) => e.target.style.color = 'var(--text-secondary)'}
+                      title="Delete entry"
                     >
                       <Trash2 size={16} />
                     </button>
