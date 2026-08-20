@@ -1227,12 +1227,7 @@ export default function Settings({ settings, throws = [], user, onSettingsUpdate
           </div>
         )}
 
-        {/* Action Controls */}
-        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-          <button type="submit" className="btn btn-primary" style={{ flex: 1, padding: '0.9rem' }}>
-            Save Configuration
-          </button>
-        </div>
+
 
         {/* Backup & Restore ZIP Log */}
         <div className="glass" style={{
