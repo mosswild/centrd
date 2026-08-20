@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { getProfiles, createProfile, deleteProfile, signInProfile, wipeApplicationData } from '../db';
-import { Flame, Plus, Trash2, ArrowLeft } from 'lucide-react';
+import { Plus, Trash2, ArrowLeft } from 'lucide-react';
+import AppLogo from './AppLogo';
 
 const AVATARS = ["🍯", "🏺", "🍵", "🧱", "🎨", "⚱️", "🌻", "🌊", "🌿", "☕", "🕯️", "🪵"];
 
@@ -242,14 +243,9 @@ export default function Auth() {
             display: 'inline-flex',
             alignItems: 'center',
             justifyContent: 'center',
-            background: 'var(--terracotta-light)',
-            color: 'var(--terracotta)',
-            width: '64px',
-            height: '64px',
-            borderRadius: '20px',
             marginBottom: '1rem'
           }}>
-            <Flame size={32} strokeWidth={2.5} />
+            <AppLogo size={56} />
           </div>
 
           <h1 className="serif-title" style={{ fontSize: '2.2rem', marginBottom: '0.4rem', fontWeight: 700 }}>

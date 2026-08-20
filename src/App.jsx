@@ -6,9 +6,10 @@ import Dashboard from './components/Dashboard';
 import LogThrow from './components/LogThrow';
 import History from './components/History';
 import Settings from './components/Settings';
+import AppLogo from './components/AppLogo';
 
 import { 
-  Flame, History as HistoryIcon, Settings as SettingsIcon, 
+  History as HistoryIcon, Settings as SettingsIcon, 
   Sun, Moon, Download, Loader2, PlusCircle 
 } from 'lucide-react';
 
@@ -207,11 +208,9 @@ export default function App() {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            background: 'var(--terracotta)',
-            color: 'white',
-            width: '44px',
-            height: '44px',
-            borderRadius: '12px',
+            background: 'none',
+            padding: 0,
+            borderRadius: '50%',
             border: 'none',
             cursor: 'pointer',
             marginBottom: '3rem',
@@ -220,7 +219,7 @@ export default function App() {
           }}
           title="Dashboard / Home"
         >
-          <Flame size={22} />
+          <AppLogo size={44} />
         </button>
 
         {/* Tab Items */}
@@ -309,7 +308,7 @@ export default function App() {
           }}
           title="Dashboard / Home"
         >
-          <Flame size={20} style={{ color: 'var(--terracotta)' }} />
+          <AppLogo size={28} />
           <span className="serif-title" style={{ fontWeight: 700, fontSize: '1.15rem', color: 'var(--text-primary)' }}>Centrd</span>
         </button>
         

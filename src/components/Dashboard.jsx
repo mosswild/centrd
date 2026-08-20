@@ -1,5 +1,6 @@
 import React from 'react';
-import { Flame, Trophy, Calendar, Compass, Target, CheckCircle2, Tag } from 'lucide-react';
+import { Trophy, Calendar, Compass, Target, CheckCircle2, Tag } from 'lucide-react';
+import AppLogo from './AppLogo';
 import { isThrowInChallenge, getSavedChallenges, switchActiveChallengeInSettings } from '../utils/challengeUtils';
 import { saveSettings } from '../db';
 
@@ -222,13 +223,13 @@ export default function Dashboard({ throws = [], settings, user, onSettingsUpdat
           {enableChallenge ? (
             <>
               <div className="glass" style={{ padding: '0.5rem 1rem', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem' }}>
-                <Flame size={16} style={{ color: 'var(--terracotta)' }} />
+                <AppLogo size={18} />
                 <span><strong>{totalThrows}</strong> / {targetCylinders} Thrown</span>
               </div>
             </>
           ) : (
             <div className="glass" style={{ padding: '0.5rem 1rem', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem' }}>
-              <Flame size={16} style={{ color: 'var(--terracotta)' }} />
+              <AppLogo size={18} />
               <span><strong>{totalHistoryCount}</strong> Pieces Logged</span>
             </div>
           )}
