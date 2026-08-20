@@ -1,14 +1,21 @@
 import React from 'react';
-import { Flame, Trophy, Calendar, Compass, Target, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Flame, Trophy, Calendar, Compass, Target, CheckCircle2, RotateCcw } from 'lucide-react';
+import { isThrowInChallenge } from '../utils/challengeUtils';
 
-export default function Dashboard({ throws, settings, user }) {
-  const totalThrows = throws.length;
+export default function Dashboard({ throws = [], settings, user }) {
+  const enableChallenge = settings.enableChallenge !== false;
+  const challengeStartDate = enableChallenge ? (settings.challengeStartDate || '') : '';
+  const activeThrows = enableChallenge 
+    ? throws.filter(t => isThrowInChallenge(t, challengeStartDate))
+    : throws;
+  const totalThrows = activeThrows.length;
+  const totalHistoryCount = throws.length;
   const targetCylinders = settings.targetCylinders || 200;
   
   // Calculate completion percentage
   const overallPercent = Math.min(100, Math.round((totalThrows / targetCylinders) * 100));
 
-  const statusCounts = throws.reduce((acc, t) => {
+  const statusCounts = activeThrows.reduce((acc, t) => {
     let status = t.status || 'Successful';
     // Map legacy statuses
     if (status === 'Collapsed' || status === 'Discarded') status = 'Failed';
@@ -19,7 +26,7 @@ export default function Dashboard({ throws, settings, user }) {
 
   // Calculate category stats
   const categoryStats = settings.weightCategories.map(cat => {
-    const catThrows = throws.filter(t => t.weightClass === cat.id);
+    const catThrows = activeThrows.filter(t => t.weightClass === cat.id);
     const count = catThrows.length;
     const target = cat.targetCount || 0;
     const percent = target > 0 ? Math.min(100, Math.round((count / target) * 100)) : 0;
@@ -75,7 +82,7 @@ export default function Dashboard({ throws, settings, user }) {
 
     if (cadencePeriod === 'day') {
       // Throws done today
-      cadenceCount = throws.filter(t => t.dateThrown === todayLocalStr).length;
+      cadenceCount = activeThrows.filter(t => t.dateThrown === todayLocalStr).length;
     } else if (cadencePeriod === 'week') {
       // Find Monday and Sunday date bounds
       const currentDay = now.getDay();
@@ -88,7 +95,7 @@ export default function Dashboard({ throws, settings, user }) {
       sunday.setDate(monday.getDate() + 6);
       sunday.setHours(23,59,59,999);
 
-      cadenceCount = throws.filter(t => {
+      cadenceCount = activeThrows.filter(t => {
         if (!t.dateThrown) return false;
         const throwDate = new Date(t.dateThrown + 'T00:00:00');
         return throwDate >= monday && throwDate <= sunday;
@@ -98,7 +105,7 @@ export default function Dashboard({ throws, settings, user }) {
       const currentYear = now.getFullYear();
       const currentMonth = now.getMonth(); // 0-11
       
-      cadenceCount = throws.filter(t => {
+      cadenceCount = activeThrows.filter(t => {
         if (!t.dateThrown) return false;
         const throwDate = new Date(t.dateThrown + 'T00:00:00');
         return throwDate.getFullYear() === currentYear && throwDate.getMonth() === currentMonth;
@@ -113,6 +120,28 @@ export default function Dashboard({ throws, settings, user }) {
   const radius = 80;
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference - (overallPercent / 100) * circumference;
+
+  // Format Challenge Start Date & Time
+  const rawStartDate = settings.challengeStartDate || settings.startDate;
+  let formattedChallengeStart = '';
+  if (rawStartDate) {
+    try {
+      const d = new Date(rawStartDate.includes('T') ? rawStartDate : rawStartDate + 'T00:00:00');
+      if (!isNaN(d.getTime())) {
+        const datePart = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+        if (rawStartDate.includes('T')) {
+          const timePart = d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+          formattedChallengeStart = `${datePart} at ${timePart}`;
+        } else {
+          formattedChallengeStart = datePart;
+        }
+      }
+    } catch (e) {
+      formattedChallengeStart = rawStartDate;
+    }
+  }
+
+  const totalPhotosCount = throws.reduce((sum, t) => sum + (t.photos ? t.photos.length : 0), 0);
 
   return (
     <div className="dashboard-view animate-fade-in">
@@ -151,94 +180,184 @@ export default function Dashboard({ throws, settings, user }) {
             </p>
           </div>
         </div>
-        <div style={{ display: 'flex', gap: '0.75rem' }}>
-          <div className="glass" style={{ padding: '0.5rem 1rem', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem' }}>
-            <Flame size={16} style={{ color: 'var(--terracotta)' }} />
-            <span><strong>{totalThrows}</strong> / {targetCylinders} Thrown</span>
-          </div>
+        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center' }}>
+          {enableChallenge ? (
+            <>
+              {challengeStartDate && totalHistoryCount > totalThrows && (
+                <div className="glass" style={{
+                  padding: '0.5rem 0.85rem',
+                  borderRadius: '12px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.4rem',
+                  fontSize: '0.8rem',
+                  color: 'var(--text-secondary)'
+                }} title={`Challenge reset on ${formattedChallengeStart}. Total history: ${totalHistoryCount} entries.`}>
+                  <RotateCcw size={14} style={{ color: 'var(--terracotta)' }} />
+                  <span>Reset Active ({totalHistoryCount - totalThrows} past logs in history)</span>
+                </div>
+              )}
+              <div className="glass" style={{ padding: '0.5rem 1rem', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem' }}>
+                <Flame size={16} style={{ color: 'var(--terracotta)' }} />
+                <span><strong>{totalThrows}</strong> / {targetCylinders} Thrown</span>
+              </div>
+            </>
+          ) : (
+            <div className="glass" style={{ padding: '0.5rem 1rem', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem' }}>
+              <Flame size={16} style={{ color: 'var(--terracotta)' }} />
+              <span><strong>{totalHistoryCount}</strong> Cylinders Logged</span>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Main Grid: Circle progress card */}
+      {/* Main Grid: Circle progress card or Studio Overview card */}
       <div style={{
         display: 'grid',
         gridTemplateColumns: '1fr',
         gap: '2rem',
         marginBottom: '2.5rem'
       }}>
-        {/* Large Circle Progress Card */}
-        <div className="glass" style={{
-          padding: '2.5rem',
-          borderRadius: '24px',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          textAlign: 'center',
-          position: 'relative',
-          overflow: 'hidden'
-        }}>
-          {/* Subtle clay background glow */}
-          <div style={{
-            position: 'absolute',
-            width: '300px',
-            height: '300px',
-            borderRadius: '50%',
-            background: 'var(--glow)',
-            filter: 'blur(80px)',
-            zIndex: 0,
-            top: '-50px',
-            left: 'calc(50% - 150px)',
-            opacity: 0.5
-          }}></div>
-
-          <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <svg width="200" height="200" className="progress-ring">
-              <circle
-                stroke="var(--border-color)"
-                fill="transparent"
-                strokeWidth="12"
-                r={radius}
-                cx="100"
-                cy="100"
-              />
-              <circle
-                className="progress-ring-circle"
-                stroke="var(--terracotta)"
-                fill="transparent"
-                strokeWidth="12"
-                strokeDasharray={circumference}
-                strokeDashoffset={strokeDashoffset}
-                strokeLinecap="round"
-                r={radius}
-                cx="100"
-                cy="100"
-              />
-            </svg>
+        {enableChallenge ? (
+          /* Large Circle Progress Card */
+          <div className="glass" style={{
+            padding: '2.5rem',
+            borderRadius: '24px',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            textAlign: 'center',
+            position: 'relative',
+            overflow: 'hidden'
+          }}>
+            {/* Subtle clay background glow */}
             <div style={{
               position: 'absolute',
-              top: '50%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)',
-              textAlign: 'center'
-            }}>
-              <span className="serif-title" style={{ fontSize: '2.5rem', fontWeight: 700, display: 'block', color: 'var(--text-primary)', lineHeight: '1' }}>
-                {overallPercent}%
-              </span>
-              <span style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)', fontWeight: 600 }}>
-                Completed
-              </span>
+              width: '300px',
+              height: '300px',
+              borderRadius: '50%',
+              background: 'var(--glow)',
+              filter: 'blur(80px)',
+              zIndex: 0,
+              top: '-50px',
+              left: 'calc(50% - 150px)',
+              opacity: 0.5
+            }}></div>
+
+            <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <svg width="200" height="200" className="progress-ring">
+                <circle
+                  stroke="var(--border-color)"
+                  fill="transparent"
+                  strokeWidth="12"
+                  r={radius}
+                  cx="100"
+                  cy="100"
+                />
+                <circle
+                  className="progress-ring-circle"
+                  stroke="var(--terracotta)"
+                  fill="transparent"
+                  strokeWidth="12"
+                  strokeDasharray={circumference}
+                  strokeDashoffset={strokeDashoffset}
+                  strokeLinecap="round"
+                  r={radius}
+                  cx="100"
+                  cy="100"
+                />
+              </svg>
+              <div style={{
+                position: 'absolute',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                textAlign: 'center'
+              }}>
+                <span className="serif-title" style={{ fontSize: '2.5rem', fontWeight: 700, display: 'block', color: 'var(--text-primary)', lineHeight: '1' }}>
+                  {overallPercent}%
+                </span>
+                <span style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-secondary)', fontWeight: 600 }}>
+                  Completed
+                </span>
+              </div>
+            </div>
+
+            <div style={{ marginTop: '1.5rem', zIndex: 1 }}>
+              <h2 className="serif-title" style={{ fontSize: '1.5rem', marginBottom: '0.4rem' }}>
+                {totalThrows >= targetCylinders 
+                  ? `${settings.challengeName || 'Cylinder Challenge'} Accomplished! 🎉` 
+                  : `${settings.challengeName || 'Cylinder Challenge'} Progress`}
+              </h2>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', maxWidth: '360px' }}>
+                You've logged <strong>{totalThrows}</strong> cylinders out of your <strong>{targetCylinders}</strong> target.
+              </p>
+              {formattedChallengeStart && (
+                <div style={{
+                  marginTop: '0.75rem',
+                  fontSize: '0.82rem',
+                  color: 'var(--terracotta)',
+                  fontWeight: 600,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.35rem',
+                  background: 'var(--terracotta-light)',
+                  padding: '0.3rem 0.85rem',
+                  borderRadius: '100px'
+                }}>
+                  <Calendar size={14} />
+                  <span>Challenge started on {formattedChallengeStart}</span>
+                </div>
+              )}
             </div>
           </div>
+        ) : (
+          /* Pure Studio Log Overview Card */
+          <div className="glass" style={{
+            padding: '2.5rem',
+            borderRadius: '24px',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            textAlign: 'center',
+            position: 'relative',
+            overflow: 'hidden'
+          }}>
+            <div style={{ zIndex: 1, maxWidth: '500px' }}>
+              <span style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--terracotta)', fontWeight: 700 }}>
+                Studio Journal
+              </span>
+              <h2 className="serif-title" style={{ fontSize: '1.8rem', fontWeight: 700, marginTop: '0.2rem', marginBottom: '0.4rem' }}>
+                Pottery Studio Logbook
+              </h2>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.92rem', marginBottom: '1.75rem' }}>
+                Your throwing practice captured in clay, sticky notes, and stage photos.
+              </p>
 
-          <div style={{ marginTop: '1.5rem', zIndex: 1 }}>
-            <h2 className="serif-title" style={{ fontSize: '1.5rem', marginBottom: '0.4rem' }}>
-              {totalThrows >= targetCylinders ? "Challenge Accomplished! 🎉" : "Cylinder Challenge Progress"}
-            </h2>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', maxWidth: '360px' }}>
-              You've logged <strong>{totalThrows}</strong> cylinders out of your <strong>{targetCylinders}</strong> target.
-            </p>
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))',
+                gap: '1rem',
+                width: '100%'
+              }}>
+                <div style={{ background: 'var(--bg-secondary)', padding: '1rem', borderRadius: '16px', border: '1px solid var(--border-color)' }}>
+                  <div style={{ fontSize: '1.6rem', fontWeight: 700, color: 'var(--terracotta)' }}>{totalHistoryCount}</div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 600, marginTop: '0.2rem' }}>Total Throws</div>
+                </div>
+
+                <div style={{ background: 'var(--bg-secondary)', padding: '1rem', borderRadius: '16px', border: '1px solid var(--border-color)' }}>
+                  <div style={{ fontSize: '1.6rem', fontWeight: 700, color: 'var(--terracotta)' }}>{totalPhotosCount}</div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 600, marginTop: '0.2rem' }}>Stage Photos</div>
+                </div>
+
+                <div style={{ background: 'var(--bg-secondary)', padding: '1rem', borderRadius: '16px', border: '1px solid var(--border-color)' }}>
+                  <div style={{ fontSize: '1.6rem', fontWeight: 700, color: '#4d7c5d' }}>{statusCounts['Successful'] || 0}</div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 600, marginTop: '0.2rem' }}>Successful</div>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Stats Summary & Deadline/Cadence Pacing Card Row */}
@@ -287,104 +406,92 @@ export default function Dashboard({ throws, settings, user }) {
         </div>
 
         {/* Studio Timeline / Cadence Pace Card */}
-        <div className="glass" style={{ padding: '2rem', borderRadius: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-          <div>
-            <h3 className="serif-title" style={{ fontSize: '1.25rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <Calendar size={20} style={{ color: 'var(--terracotta)' }} />
-              Pacing Goal
-            </h3>
+        {enableChallenge ? (
+          <div className="glass" style={{ padding: '2rem', borderRadius: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+            <div>
+              <h3 className="serif-title" style={{ fontSize: '1.25rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <Calendar size={20} style={{ color: 'var(--terracotta)' }} />
+                Pacing Goal
+              </h3>
 
-            {/* Render End Date Deadline Target */}
-            {scheduleType === 'deadline' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem' }}>
-                  <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Deadline:</span>
-                  <span style={{ fontWeight: 600 }}>{new Date(settings.endDate + 'T00:00:00').toLocaleDateString(undefined, { dateStyle: 'medium' })}</span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem' }}>
-                  <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Days Remaining:</span>
-                  <span style={{ fontWeight: 600, color: daysRemaining <= 5 ? 'var(--collapse)' : 'var(--text-primary)' }}>
-                    {deadlinePassed ? 'Deadline Passed' : `${daysRemaining} days`}
-                  </span>
-                </div>
-                {!deadlinePassed && requiredPace !== null && (
-                  <div style={{ background: 'var(--bg-secondary)', padding: '1rem', borderRadius: '16px', marginTop: '0.5rem' }}>
-                    <span style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 600 }}>
-                      Pace Required
-                    </span>
-                    <span style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--terracotta)' }}>
-                      {requiredPace}
-                    </span>
-                    <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginLeft: '0.4rem' }}>
-                      cylinders / day
+              {/* Render End Date Deadline Target */}
+              {scheduleType === 'deadline' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem' }}>
+                    <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Deadline:</span>
+                    <span style={{ fontWeight: 600 }}>{new Date(settings.endDate + 'T00:00:00').toLocaleDateString(undefined, { dateStyle: 'medium' })}</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem' }}>
+                    <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Days Remaining:</span>
+                    <span style={{ fontWeight: 600, color: daysRemaining <= 5 ? 'var(--collapse)' : 'var(--text-primary)' }}>
+                      {deadlinePassed ? 'Deadline Passed' : `${daysRemaining} days`}
                     </span>
                   </div>
-                )}
-              </div>
-            )}
-
-            {/* Render Cadence Goal Target */}
-            {scheduleType === 'cadence' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '0.5rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem' }}>
-                  <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Cadence Target:</span>
-                  <span style={{ fontWeight: 600 }}>{cadenceTarget} cylinders per {cadencePeriod}</span>
-                </div>
-                
-                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem' }}>
-                  <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Logged this {cadencePeriod}:</span>
-                  <span style={{ fontWeight: 600 }}>{cadenceCount} cylinders</span>
-                </div>
-
-                <div style={{ background: 'var(--bg-secondary)', padding: '1rem', borderRadius: '16px', marginTop: '0.5rem', textAlign: 'center' }}>
-                  {cadenceGoalMet ? (
-                    <div style={{ color: 'var(--success)' }}>
-                      <CheckCircle2 size={32} style={{ margin: '0 auto 0.5rem auto' }} />
-                      <span style={{ display: 'block', fontSize: '1.1rem', fontWeight: 700 }}>Goal Met! 🎉</span>
-                      <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>You've reached your cadence target for this period!</span>
-                    </div>
-                  ) : (
-                    <div style={{ color: 'var(--terracotta)' }}>
-                      <Target size={32} style={{ margin: '0 auto 0.5rem auto', color: 'var(--text-secondary)' }} />
-                      <span style={{ display: 'block', fontSize: '1.4rem', fontWeight: 800 }}>{cadenceRemaining} More</span>
-                      <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                        cylinder{cadenceRemaining > 1 ? 's' : ''} needed to hit your target.
+                  {!deadlinePassed && requiredPace !== null && (
+                    <div style={{ background: 'var(--bg-secondary)', padding: '1rem', borderRadius: '16px', marginTop: '0.5rem' }}>
+                      <span style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 600 }}>
+                        Pace Required
+                      </span>
+                      <span style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--terracotta)' }}>
+                        {requiredPace}
+                      </span>
+                      <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginLeft: '0.4rem' }}>
+                        cylinders / day
                       </span>
                     </div>
                   )}
                 </div>
-              </div>
-            )}
+              )}
 
-            {/* Render No Time Limit */}
-            {scheduleType === 'none' && (
-              <div style={{ textAlign: 'center', padding: '2.5rem 1rem', color: 'var(--text-secondary)' }}>
-                <p style={{ fontSize: '0.95rem', marginBottom: '0.5rem', fontWeight: 600 }}>Craftsmanship Mode</p>
-                <p style={{ fontSize: '0.85rem' }}>No time limit or cadence constraints active. Throw at your own pace to master the craft.</p>
-              </div>
-            )}
+              {/* Render Cadence Goal Target */}
+              {scheduleType === 'cadence' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '0.5rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem' }}>
+                    <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Cadence Target:</span>
+                    <span style={{ fontWeight: 600 }}>{cadenceTarget} cylinders per {cadencePeriod}</span>
+                  </div>
+                  
+                  <div style={{ background: 'var(--bg-secondary)', padding: '1rem', borderRadius: '16px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                      <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 600 }}>
+                        Current Period
+                      </span>
+                      <span style={{ fontSize: '1.2rem', fontWeight: 700, color: cadenceSuccess ? 'var(--success)' : 'var(--terracotta)' }}>
+                        {currentPeriodThrows} / {cadenceTarget}
+                      </span>
+                    </div>
+                    <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.4rem' }}>
+                      {cadenceSuccess 
+                        ? `🎉 Target reached for this ${cadencePeriod}!` 
+                        : `${cadenceTarget - currentPeriodThrows} more throw(s) needed this ${cadencePeriod}.`}
+                    </p>
+                  </div>
+                </div>
+              )}
 
-          </div>
-          {scheduleType === 'deadline' && deadlinePassed && (
-            <div style={{
-              background: 'var(--bg-secondary)',
-              border: '1px dashed var(--collapse)',
-              color: 'var(--collapse)',
-              padding: '0.75rem 1rem',
-              borderRadius: '12px',
-              fontSize: '0.85rem',
-              marginTop: '1rem'
-            }}>
-              The schedule deadline has passed. Consider editing settings to extend the time.
+              {scheduleType === 'none' && (
+                <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginTop: '1rem' }}>
+                  No time limit or cadence pacing enabled. Throw at your own natural rhythm!
+                </p>
+              )}
             </div>
-          )}
-        </div>
+          </div>
+        ) : (
+          <div className="glass" style={{ padding: '2rem', borderRadius: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'center', textAlign: 'center' }}>
+            <h3 className="serif-title" style={{ fontSize: '1.25rem', marginBottom: '0.6rem' }}>
+              Studio Journal Mode
+            </h3>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: '1.5' }}>
+              Log each piece as you practice at the wheel. Record clay weights, photos at every stage, and notes to track your studio evolution.
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Target Category Breakdown Section */}
       <h3 className="serif-title" style={{ fontSize: '1.6rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
         <Trophy size={24} style={{ color: 'var(--terracotta)' }} />
-        Weight Breakdown Progress
+        {enableChallenge ? "Weight Breakdown Progress" : "Weight Classes Logged"}
       </h3>
       <div style={{
         display: 'grid',
@@ -392,7 +499,7 @@ export default function Dashboard({ throws, settings, user }) {
         gap: '1.5rem'
       }}>
         {categoryStats.map((cat) => {
-          const isDone = cat.count >= cat.target;
+          const isDone = enableChallenge && cat.count >= cat.target;
           return (
             <div key={cat.id} className="glass" style={{
               padding: '1.5rem',
@@ -408,37 +515,39 @@ export default function Dashboard({ throws, settings, user }) {
                     Weight: {cat.weight} {cat.unit}
                   </span>
                 </div>
-                {isDone ? (
-                  <span style={{
-                    fontSize: '0.75rem',
-                    fontWeight: 700,
-                    color: 'var(--celadon)',
-                    background: 'var(--celadon-light)',
-                    padding: '0.25rem 0.6rem',
-                    borderRadius: '100px',
-                    textTransform: 'uppercase'
-                  }}>
-                    Completed
-                  </span>
-                ) : (
-                  <span style={{
-                    fontSize: '0.75rem',
-                    fontWeight: 700,
-                    color: 'var(--terracotta)',
-                    background: 'var(--terracotta-light)',
-                    padding: '0.25rem 0.6rem',
-                    borderRadius: '100px',
-                    textTransform: 'uppercase'
-                  }}>
-                    {cat.percent}%
-                  </span>
+                {enableChallenge && (
+                  isDone ? (
+                    <span style={{
+                      fontSize: '0.75rem',
+                      fontWeight: 700,
+                      color: 'var(--celadon)',
+                      background: 'var(--celadon-light)',
+                      padding: '0.25rem 0.6rem',
+                      borderRadius: '100px',
+                      textTransform: 'uppercase'
+                    }}>
+                      Completed
+                    </span>
+                  ) : (
+                    <span style={{
+                      fontSize: '0.75rem',
+                      fontWeight: 700,
+                      color: 'var(--terracotta)',
+                      background: 'var(--terracotta-light)',
+                      padding: '0.25rem 0.6rem',
+                      borderRadius: '100px',
+                      textTransform: 'uppercase'
+                    }}>
+                      {cat.percent}%
+                    </span>
+                  )
                 )}
               </div>
 
               {/* Progress Numbers */}
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', marginBottom: '0.4rem' }}>
-                <span style={{ color: 'var(--text-secondary)' }}>Thrown:</span>
-                <span style={{ fontWeight: 600 }}>{cat.count} / {cat.target}</span>
+                <span style={{ color: 'var(--text-secondary)' }}>Logged:</span>
+                <span style={{ fontWeight: 600 }}>{cat.count} {enableChallenge && `/ ${cat.target}`}</span>
               </div>
 
               {/* Success Ratio */}

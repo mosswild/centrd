@@ -245,6 +245,8 @@ export async function loadSettings(userId) {
     
     return {
       userId,
+      enableChallenge: true,
+      challengeName: "200 Cylinder Challenge",
       targetCylinders: 200,
       hasTimeLimit: false,
       startDate: new Date().toISOString().split('T')[0],

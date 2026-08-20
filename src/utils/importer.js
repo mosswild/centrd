@@ -63,6 +63,8 @@ export async function importChallengeFromZip(zipFile, activeUserId, onProgress) 
       weightValue: t.weightValue,
       status: t.status || 'Successful',
       dateThrown: t.dateThrown,
+      challengeName: t.challengeName || (importedSettings.challengeName || ''),
+      createdAt: t.createdAt || new Date((t.dateThrown || new Date().toISOString().split('T')[0]) + 'T12:00:00').toISOString(),
       notes: t.notes || "",
       notesArray: t.notesArray || (t.notes ? [{ id: `imported_${Date.now()}_${i}`, text: t.notes, stage: 'Wet Clay', createdAt: t.dateThrown || new Date().toISOString() }] : []),
       photos: [] // photos will be uploaded and updated separately

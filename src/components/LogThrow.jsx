@@ -150,6 +150,7 @@ export default function LogThrow({ settings, user, onNavigateToHistory }) {
         status,
         notes: initialNoteText,
         notesArray: initialNotesArray,
+        challengeName: settings?.challengeName || '200 Cylinder Challenge',
         photos: []
       };
 

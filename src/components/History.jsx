@@ -1,14 +1,16 @@
 import React, { useState, useRef } from 'react';
 import { updateThrowLog, uploadThrowPhoto, deleteThrowLog } from '../db';
-import { Calendar, Trash2, Tag, Camera, Filter, Search, Image as ImageIcon, AlertCircle } from 'lucide-react';
+import { Calendar, Trash2, Tag, Camera, Filter, Search, Image as ImageIcon, AlertCircle, RotateCcw } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import PostItNotesStack from './PostItNotesStack';
 import ImageLightboxModal from './ImageLightboxModal';
 import { getNotesArray, formatNotesSummary, isSameStage, getAvailableStages } from '../utils/noteUtils';
+import { isThrowInChallenge } from '../utils/challengeUtils';
 
 export default function History({ throws, settings, user }) {
   const [selectedWeight, setSelectedWeight] = useState('all');
   const [selectedStatus, setSelectedStatus] = useState('all');
+  const [challengeFilter, setChallengeFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [cardStages, setCardStages] = useState({}); // { [throwId]: 'all' | 'Leather Hard' | ... }
   
@@ -203,8 +205,21 @@ export default function History({ throws, settings, user }) {
     }
   };
 
+  // Unique challenge names present in log entries
+  const uniqueChallengeNames = Array.from(
+    new Set(throws.map(t => t.challengeName).filter(Boolean))
+  );
+
   // Filter logic
+  const challengeStartDate = settings?.challengeStartDate || '';
   const filteredThrows = throws.filter(t => {
+    let matchesChallenge = true;
+    if (challengeFilter === 'current') {
+      matchesChallenge = !challengeStartDate || isThrowInChallenge(t, challengeStartDate);
+    } else if (challengeFilter !== 'all') {
+      matchesChallenge = (t.challengeName === challengeFilter);
+    }
+
     const matchesWeight = selectedWeight === 'all' || t.weightClass === selectedWeight;
     const matchesStatus = selectedStatus === 'all' || t.status === selectedStatus;
     const query = searchQuery.toLowerCase();
@@ -216,10 +231,11 @@ export default function History({ throws, settings, user }) {
 
     const matchesSearch = query === '' ||
       matchesNotes ||
+      (t.challengeName && t.challengeName.toLowerCase().includes(query)) ||
       (t.weightClass && t.weightClass.toLowerCase().includes(query)) ||
       (t.status && t.status.toLowerCase().includes(query));
     
-    return matchesWeight && matchesStatus && matchesSearch;
+    return matchesChallenge && matchesWeight && matchesStatus && matchesSearch;
   });
 
   return (
@@ -268,6 +284,24 @@ export default function History({ throws, settings, user }) {
             style={{ paddingLeft: '2.5rem', paddingRight: '1rem', fontSize: '0.9rem', borderRadius: '10px' }}
           />
         </div>
+
+        {/* Filter Challenge Cycle */}
+        {(challengeStartDate || uniqueChallengeNames.length > 0) && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <RotateCcw size={14} style={{ color: 'var(--terracotta)' }} />
+            <select
+              value={challengeFilter}
+              onChange={(e) => setChallengeFilter(e.target.value)}
+              style={{ padding: '0.5rem 2rem 0.5rem 0.75rem', fontSize: '0.9rem', width: 'auto', borderRadius: '10px' }}
+            >
+              <option value="all">All Challenges ({throws.length})</option>
+              {challengeStartDate && <option value="current">Active Challenge Only</option>}
+              {uniqueChallengeNames.map(cName => (
+                <option key={cName} value={cName}>Challenge: {cName}</option>
+              ))}
+            </select>
+          </div>
+        )}
 
         {/* Filter Weight */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -380,6 +414,21 @@ export default function History({ throws, settings, user }) {
                         }}>
                           {item.status || 'Successful'}
                         </span>
+                        {item.challengeName && (
+                          <span style={{
+                            fontSize: '0.72rem',
+                            fontWeight: 600,
+                            color: 'var(--terracotta)',
+                            background: 'var(--terracotta-light)',
+                            padding: '0.15rem 0.55rem',
+                            borderRadius: '100px',
+                            display: 'inline-block',
+                            marginTop: '0.25rem',
+                            marginLeft: '0.35rem'
+                          }}>
+                            {item.challengeName}
+                          </span>
+                        )}
                       </div>
                       <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
                         <Calendar size={12} />

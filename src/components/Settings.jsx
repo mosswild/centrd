@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { saveSettings, signOutUser, remapThrowStages, updateProfile, deleteProfile } from '../db';
-import { Settings as SettingsIcon, LogOut, Download, Upload, Plus, Trash2, Loader2, ArrowUp, ArrowDown, Edit2, Check, X } from 'lucide-react';
+import { Settings as SettingsIcon, LogOut, Download, Upload, Plus, Trash2, Loader2, ArrowUp, ArrowDown, Edit2, Check, X, RotateCcw, Target } from 'lucide-react';
 import { importChallengeFromZip } from '../utils/importer';
 
 const AVATAR_OPTIONS = ["🍯", "🏺", "🍵", "🧱", "🎨", "⚱️", "🌻", "🌊", "🌿", "☕", "🕯️", "🪵"];
@@ -13,6 +13,8 @@ export default function Settings({ settings, throws = [], user, onSettingsUpdate
   const [profileSaving, setProfileSaving] = useState(false);
   const [profileSuccess, setProfileSuccess] = useState(false);
 
+  const [enableChallenge, setEnableChallenge] = useState(settings.enableChallenge !== false);
+  const [challengeName, setChallengeName] = useState(settings.challengeName || '200 Cylinder Challenge');
   const [targetCylinders, setTargetCylinders] = useState(settings.targetCylinders || 200);
   const [scheduleType, setScheduleType] = useState(settings.scheduleType || (settings.hasTimeLimit ? 'deadline' : 'none'));
   const [startDate, setStartDate] = useState(settings.startDate || new Date().toISOString().split('T')[0]);
@@ -21,6 +23,7 @@ export default function Settings({ settings, throws = [], user, onSettingsUpdate
   const [cadencePeriod, setCadencePeriod] = useState(settings.cadencePeriod || 'week');
   const [weightCategories, setWeightCategories] = useState(settings.weightCategories || []);
   const [globalUnit, setGlobalUnit] = useState(settings.globalUnit || 'lb');
+  const [challengeStartDate, setChallengeStartDate] = useState(settings.challengeStartDate || '');
 
   // Pottery Stages State
   const [potteryStages, setPotteryStages] = useState(
@@ -159,6 +162,8 @@ export default function Settings({ settings, throws = [], user, onSettingsUpdate
       // Auto-save settings
       const updatedSettings = {
         userId: user.id,
+        enableChallenge,
+        challengeName,
         targetCylinders,
         hasTimeLimit: scheduleType === 'deadline',
         scheduleType,
@@ -168,7 +173,8 @@ export default function Settings({ settings, throws = [], user, onSettingsUpdate
         cadencePeriod,
         weightCategories,
         globalUnit,
-        potteryStages: updated
+        potteryStages: updated,
+        challengeStartDate
       };
       await saveSettings(user.id, updatedSettings);
       if (onSettingsUpdate) onSettingsUpdate(updatedSettings);
@@ -187,7 +193,7 @@ export default function Settings({ settings, throws = [], user, onSettingsUpdate
     setSuccess(false);
     setError('');
 
-    if (scheduleType === 'deadline' && !endDate) {
+    if (enableChallenge && scheduleType === 'deadline' && !endDate) {
       setError('Please select a target end date.');
       return;
     }
@@ -195,6 +201,8 @@ export default function Settings({ settings, throws = [], user, onSettingsUpdate
     try {
       const updatedSettings = {
         userId: user.id,
+        enableChallenge,
+        challengeName,
         targetCylinders,
         hasTimeLimit: scheduleType === 'deadline',
         scheduleType,
@@ -208,7 +216,8 @@ export default function Settings({ settings, throws = [], user, onSettingsUpdate
           unit: globalUnit
         })),
         globalUnit,
-        potteryStages
+        potteryStages,
+        challengeStartDate
       };
 
       await saveSettings(user.id, updatedSettings);
@@ -225,6 +234,9 @@ export default function Settings({ settings, throws = [], user, onSettingsUpdate
 
   const handleExportJSON = () => {
     const settingsData = {
+      enableChallenge,
+      challengeName,
+      challengeStartDate,
       targetCylinders,
       scheduleType,
       hasTimeLimit: scheduleType === 'deadline',
@@ -232,12 +244,13 @@ export default function Settings({ settings, throws = [], user, onSettingsUpdate
       endDate,
       cadenceFrequency,
       cadencePeriod,
+      globalUnit,
+      potteryStages,
       weightCategories: weightCategories.map(cat => ({
         ...cat,
         weight: Math.round(Number(cat.weight)) || 1,
         unit: globalUnit
-      })),
-      globalUnit
+      }))
     };
 
     const blob = new Blob([JSON.stringify(settingsData, null, 2)], { type: 'application/json' });
@@ -260,6 +273,9 @@ export default function Settings({ settings, throws = [], user, onSettingsUpdate
       try {
         const parsed = JSON.parse(event.target.result);
         if (parsed.targetCylinders && Array.isArray(parsed.weightCategories)) {
+          setEnableChallenge(parsed.enableChallenge !== false);
+          setChallengeName(parsed.challengeName || '200 Cylinder Challenge');
+          setChallengeStartDate(parsed.challengeStartDate || '');
           setTargetCylinders(parsed.targetCylinders);
           setScheduleType(parsed.scheduleType || (parsed.hasTimeLimit ? 'deadline' : 'none'));
           setStartDate(parsed.startDate || new Date().toISOString().split('T')[0]);
@@ -267,13 +283,39 @@ export default function Settings({ settings, throws = [], user, onSettingsUpdate
           setCadenceFrequency(parsed.cadenceFrequency || 3);
           setCadencePeriod(parsed.cadencePeriod || 'week');
           setWeightCategories(parsed.weightCategories);
+          if (parsed.globalUnit) setGlobalUnit(parsed.globalUnit);
+          if (Array.isArray(parsed.potteryStages)) setPotteryStages(parsed.potteryStages);
           setError('');
-          alert('Challenge settings imported! Click "Save Configuration" to commit these settings.');
+
+          const updatedSettings = {
+            userId: user.id,
+            enableChallenge: parsed.enableChallenge !== false,
+            challengeName: parsed.challengeName || '200 Cylinder Challenge',
+            challengeStartDate: parsed.challengeStartDate || '',
+            targetCylinders: parsed.targetCylinders,
+            hasTimeLimit: parsed.scheduleType === 'deadline' || parsed.hasTimeLimit,
+            scheduleType: parsed.scheduleType || (parsed.hasTimeLimit ? 'deadline' : 'none'),
+            startDate: parsed.startDate || new Date().toISOString().split('T')[0],
+            endDate: parsed.endDate || '',
+            cadenceFrequency: Number(parsed.cadenceFrequency || 3),
+            cadencePeriod: parsed.cadencePeriod || 'week',
+            weightCategories: parsed.weightCategories,
+            globalUnit: parsed.globalUnit || 'lb',
+            potteryStages: Array.isArray(parsed.potteryStages) ? parsed.potteryStages : potteryStages
+          };
+
+          await saveSettings(user.id, updatedSettings);
+          if (onSettingsUpdate) onSettingsUpdate(updatedSettings);
+
+          alert('Challenge settings imported and applied!');
         } else {
           setError('Invalid settings schema. Check JSON parameters.');
         }
       } catch (err) {
+        console.error(err);
         setError('Failed to parse settings JSON file.');
+      } finally {
+        e.target.value = '';
       }
     };
     reader.readAsText(file);
@@ -519,7 +561,52 @@ export default function Settings({ settings, throws = [], user, onSettingsUpdate
             Challenge Targets
           </h3>
           
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          {/* Enable / Disable Challenge Mode Toggle */}
+          <div style={{
+            display: 'flex',
+            justify: 'space-between',
+            alignItems: 'center',
+            background: 'var(--bg-secondary)',
+            padding: '1rem 1.25rem',
+            borderRadius: '16px',
+            border: '1px solid var(--border-color)',
+            marginBottom: '1.5rem'
+          }}>
+            <div>
+              <h4 style={{ fontWeight: 700, fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                <Target size={17} style={{ color: 'var(--terracotta)' }} />
+                Enable Challenge Mode
+              </h4>
+              <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>
+                {enableChallenge ? 'Track target progress, percentages, and challenge deadlines.' : 'Use Centrd as a pure studio logbook without target counts or deadlines.'}
+              </p>
+            </div>
+            <label className="switch">
+              <input
+                type="checkbox"
+                checked={enableChallenge}
+                onChange={(e) => setEnableChallenge(e.target.checked)}
+              />
+              <span className="slider round"></span>
+            </label>
+          </div>
+
+          {enableChallenge ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+              <div>
+                <label htmlFor="challengeName">Challenge Name</label>
+                <input
+                  id="challengeName"
+                  type="text"
+                  placeholder="e.g. Summer 200 Mug Sprint"
+                  value={challengeName}
+                  onChange={(e) => setChallengeName(e.target.value)}
+                />
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'block', marginTop: '0.25rem' }}>
+                  Give your throwing challenge a custom title for your dashboard and log history.
+                </span>
+              </div>
+
             <div>
               <label htmlFor="targetCylinders">Total Challenge Cylinder Target</label>
               <input
@@ -637,7 +724,132 @@ export default function Settings({ settings, throws = [], user, onSettingsUpdate
               </div>
             )}
 
+            {/* Reset Challenge Progress Action */}
+            <div style={{
+              background: 'var(--bg-secondary)',
+              border: '1px solid var(--border-color)',
+              borderRadius: '16px',
+              padding: '1.25rem',
+              marginTop: '1rem',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              gap: '1rem'
+            }}>
+              <div>
+                <h4 style={{ fontWeight: 700, fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <RotateCcw size={15} style={{ color: 'var(--terracotta)' }} />
+                  Reset Challenge Progress
+                </h4>
+                <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '0.2rem', lineHeight: '1.4' }}>
+                  {challengeStartDate ? (
+                    <>Challenge reset on <strong>{new Date(challengeStartDate).toLocaleDateString()} at {new Date(challengeStartDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</strong>. All prior logs remain safe in history.</>
+                  ) : (
+                    <>Reset your current cylinder count to 0 for a fresh challenge cycle. All existing throw entries and photos will remain safe in your history log.</>
+                  )}
+                </p>
+              </div>
+
+              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                {challengeStartDate && (
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      if (window.confirm("Include all historical logs in challenge counts again?")) {
+                        setChallengeStartDate('');
+                        const updatedSettings = {
+                          userId: user.id,
+                          targetCylinders,
+                          hasTimeLimit: scheduleType === 'deadline',
+                          scheduleType,
+                          startDate,
+                          endDate: scheduleType === 'deadline' ? endDate : '',
+                          cadenceFrequency: Number(cadenceFrequency),
+                          cadencePeriod,
+                          weightCategories,
+                          globalUnit,
+                          potteryStages,
+                          challengeStartDate: ''
+                        };
+                        try {
+                          await saveSettings(user.id, updatedSettings);
+                          if (onSettingsUpdate) onSettingsUpdate(updatedSettings);
+                        } catch (err) {
+                          console.error(err);
+                        }
+                      }
+                    }}
+                    className="btn btn-secondary"
+                    style={{ fontSize: '0.78rem', padding: '0.4rem 0.8rem' }}
+                  >
+                    Include All History
+                  </button>
+                )}
+
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const confirmMsg = "Start a new challenge cycle?\n\nYour challenge throw count will reset to 0, but all your past logs and photos will stay in your history.";
+                    if (window.confirm(confirmMsg)) {
+                      const newNameInput = window.prompt("Name your new challenge cycle:", challengeName || "200 Cylinder Challenge");
+                      const activeName = (newNameInput !== null && newNameInput.trim()) ? newNameInput.trim() : (challengeName || "200 Cylinder Challenge");
+                      const nowIso = new Date().toISOString();
+                      
+                      setChallengeName(activeName);
+                      setChallengeStartDate(nowIso);
+                      
+                      const updatedSettings = {
+                        userId: user.id,
+                        challengeName: activeName,
+                        targetCylinders,
+                        hasTimeLimit: scheduleType === 'deadline',
+                        scheduleType,
+                        startDate,
+                        endDate: scheduleType === 'deadline' ? endDate : '',
+                        cadenceFrequency: Number(cadenceFrequency),
+                        cadencePeriod,
+                        weightCategories,
+                        globalUnit,
+                        potteryStages,
+                        challengeStartDate: nowIso
+                      };
+                      try {
+                        await saveSettings(user.id, updatedSettings);
+                        if (onSettingsUpdate) onSettingsUpdate(updatedSettings);
+                      } catch (err) {
+                        console.error(err);
+                      }
+                    }
+                  }}
+                  className="btn btn-secondary"
+                  style={{
+                    color: 'var(--terracotta)',
+                    borderColor: 'var(--terracotta)',
+                    fontSize: '0.78rem',
+                    padding: '0.4rem 0.8rem'
+                  }}
+                >
+                  <RotateCcw size={14} />
+                  Reset Progress to 0
+                </button>
+              </div>
+            </div>
           </div>
+          ) : (
+            <div style={{
+              background: 'var(--bg-secondary)',
+              border: '1px solid var(--border-color)',
+              borderRadius: '16px',
+              padding: '1.25rem',
+              textAlign: 'center',
+              color: 'var(--text-secondary)',
+              fontSize: '0.88rem'
+            }}>
+              🌿 <strong>Challenge Mode is currently disabled.</strong> Your throwing entries will be recorded in your studio log without target goals or deadlines.
+            </div>
+          )}
+
         </div>
 
         {/* Weights Categories Breakdown */}
