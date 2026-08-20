@@ -2,15 +2,19 @@
 
 > *Find your center. Challenge your limits. Log your growth.*
 
-**Centrd** is a clean, modern, and private web-based diary designed for potters tracking their cylinder throw counts, stages, and challenge milestones (like the 200 Cylinder challenge). 
+**Centrd** is a **free, open-source, and self-hostable** web-based diary designed for potters tracking their cylinder throw counts, stages, and challenge milestones (like the 200 Cylinder challenge). 
 
-This version runs on a **100% self-hosted, local-first fullstack architecture**, meaning all potter profiles, throw logs, configurations, and photos are saved directly onto your own home server or local machine.
+It runs on a **100% self-hosted, local-first architecture**, meaning all potter profiles, throw logs, configurations, and photos stay saved on your own home server or local machine with complete privacy.
 
 ---
 
 ## ✨ Features
 
-* **Local Potter Profiles & Data Isolation:** Create multiple potter accounts (with custom names, studios, and 12 pottery emoji stamp avatars) with 100% data isolation on a single shared home server.
+* **Free, Open-Source & Self-Hostable:** 100% free and private software that you control. Run it on your home server (Synology NAS, Raspberry Pi, Docker) or local computer without cloud subscriptions or third-party trackers.
+* **Multiple Potter Profiles & Studio Hosting:** Support multiple potter accounts with 100% data isolation on a single shared server — ideal for households with multiple potters or shared studio servers.
+* **Custom Emoji Avatars:** Personalize your potter profile by choosing from default avatars or using your device's emoji keyboard to set any symbol you like.
+* **Shareable Challenge Settings:** Export custom challenge configurations to JSON and share them with friends or studio mates so everyone can compete in the exact same challenge.
+* **ZIP Logbook Backup & Rebuild:** Export your complete throwing log, sticky notes, and high-res photos into a structured markdown and ZIP archive. Import any exported ZIP backup file to rebuild your full journal and photo gallery on a new server or machine.
 * **Custom Challenge Names & Historical Tagging:** Give your challenge cycles custom titles (e.g. *"Summer 200 Mug Sprint"*, *"Fall Dinnerware Series"*) with active start timestamps. Every cylinder entry is tagged with its challenge name for long-term historical context.
 * **Challenge Progress Reset:** Start a fresh challenge cycle anytime with a single click — resetting progress to 0 while preserving 100% of past throwing entries, sticky notes, and photos in your history.
 * **Pure Studio Logbook Mode:** Turn off Challenge Mode in settings to use Centrd as a peaceful, pressure-free studio diary with an unfiltered studio overview dashboard.
@@ -21,7 +25,6 @@ This version runs on a **100% self-hosted, local-first fullstack architecture**,
 * **Flexible Decimal Weights & Global Units:** Log throws using precise decimal weights (e.g. `1.3 lb` or `0.8 kg`). The app automatically maps entries to the closest whole-number challenge class while preserving the exact decimal value in history. Globally switch between Pounds (`lb`) and Kilograms (`kg`).
 * **Pacing Strategies & Deadlines:** Track pacing strategies including custom target dates or daily/weekly/monthly cadence targets.
 * **Real-Time Cross-Device Sync:** Built-in Server-Sent Events (SSE) automatically stream updates between all connected phones, tablets, and computers on your home network in real-time.
-* **ZIP Logbook & Settings Backup:** Export your logs, metadata, and photos into a structured markdown journal and ZIP archive for offline backups, or export/import custom challenge configurations.
 
 ---
 
