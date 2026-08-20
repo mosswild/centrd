@@ -10,13 +10,16 @@ This version runs on a **100% self-hosted, local-first fullstack architecture**,
 
 ## ✨ Features
 
-* **Local Potter Profiles:** Create multiple potter accounts (with custom names, studios, and pottery emoji stamp avatars) to share a single server on multiple devices.
+* **Local Potter Profiles:** Create multiple potter accounts (with custom names, studios, and 12 pottery stamp avatars) to share a single server on multiple devices with 100% data isolation.
+* **Custom Challenge Names & Historical Tagging:** Give your challenge cycles custom titles (e.g. *"Summer 200 Mug Sprint"*, *"Fall Dinnerware Series"*) and view active start timestamps. Every cylinder entry is tagged with its challenge name for long-term historical context.
+* **Challenge Progress Reset:** Start a fresh challenge cycle anytime with a single click — resetting progress to 0 while preserving 100% of past throwing entries, sticky notes, and photos in your history.
+* **Pure Studio Logbook Mode:** Turn off Challenge Mode in settings to use Centrd as a peaceful, pressure-free studio diary with an unfiltered studio overview dashboard.
 * **Flexible Decimal Weights:** Log throws using precise decimal weights (e.g. `1.3 lb` or `0.8 kg`). The app automatically maps entries to the closest whole-number challenge class while preserving the exact decimal value in history logs.
 * **Global Units:** Globally configure your dashboard and inputs to display in Pounds (`lb`) or Kilograms (`kg`).
-* **Interactive Challenges:** Track pacing strategies including custom target dates or daily/weekly/monthly cadence targets.
-* **Stage Progression & Gallery:** Log throw photos and update them chronologically through the 6 stages of clay (*Wet Clay*, *Leather Hard*, *Bone Dry*, *Bisqueware*, *Glazed*, and *Finished Glaze*).
+* **Interactive Challenges & Pacing:** Track pacing strategies including custom target dates or daily/weekly/monthly cadence targets.
+* **Stage Progression & Gallery:** Log throw photos and update them chronologically through pottery stages (*Wet Clay*, *Leather Hard*, *Bone Dry*, *Bisqueware*, *Glazed*, and *Finished Glaze*).
 * **Real-Time Cross-Device Sync:** Built-in Server-Sent Events (SSE) automatically stream updates between all connected devices in real-time. Log a throw on your phone in the studio, and watch the dashboard update instantly on your laptop.
-* **ZIP Exporter:** Export your logs, metadata, and photos into a structured markdown journal and ZIP archive for offline backups.
+* **ZIP Logbook & Settings Backup:** Export your logs, metadata, and photos into a structured markdown journal and ZIP archive for offline backups, or export/import custom challenge configurations.
 
 ---
 
