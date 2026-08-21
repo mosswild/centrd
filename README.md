@@ -16,23 +16,19 @@ It runs on a **100% self-hosted, local-first architecture**, meaning all potter 
 
 * **Free, Open-Source & Self-Hostable:** 100% free and private software that you control. Run it on your home server (Synology NAS, Raspberry Pi, Docker) or local computer without cloud subscriptions or third-party trackers.
 * **No Ads, No Subscriptions, No "Pro" Versions:** All features are available to all users for free — no hidden costs or premium tiers. And if you want to make changes, fork it and build your own version!
-* **Multiple Potter Profiles & Studio Hosting:** Support multiple potter accounts with 100% data isolation on a single shared server — ideal for households with multiple potters or shared studio servers.
-* **Custom Emoji Avatars:** Personalize your potter profile by choosing from default avatars or using your device's emoji keyboard to set any symbol you like.
-* **iOS Safari Home Screen App & PWA Support:** Add Centrd directly to your iPhone or iPad home screen via Safari ("Add to Home Screen") for a full-screen, native app experience complete with custom clay touch icons and status bar styling.
+* **Multiple Potter Profiles & Studio Hosting:** Support multiple potter accounts with 100% data isolation on a single shared server — ideal for households with multiple potters or shared studio servers. Choose different avatars for different potters.
 * **Multiple Saved Challenges & Active Selector:** Create, save, and switch between multiple named challenge series (e.g. *"Spring 100 Bowl Challenge"*, *"Fall 200 Cylinder Sprint"*). Easily switch your active challenge, rename challenges in place, or create new ones right from Settings without losing any past progress.
 * **Tag-Based Challenge Progress & Multi-Tagging:** Attach multiple challenge tags to any piece. Challenges track progress purely via tags, allowing a single entry to count toward multiple active or historical challenges simultaneously.
-* **In-Place Challenge Renaming & Log Tag Migration:** Rename existing challenges anytime in Settings. Changing a challenge's title automatically updates all historical throw logs tagged with the old title so past progress stays perfectly synced.
-* **Generic Pottery & Cylinder Targets:** Flexible target configuration supporting all pottery shapes (cylinders, bowls, mugs, plates, vases, pitchers) with custom weight classes and total challenge count goals.
 * **Shareable Challenge Settings:** Export custom challenge configurations to JSON and share them with friends or studio mates so everyone can compete in the exact same challenge.
-* **ZIP Logbook Backup & Rebuild:** Export your complete throwing log, sticky notes, and high-res photos into a structured markdown and ZIP archive. Import any exported ZIP backup file to rebuild your full journal and photo gallery on a new server or machine.
+* **ZIP Logbook Backup & Rebuild:** Export your complete throwing log, sticky notes, and photos into a structured markdown and ZIP archive. Import any exported ZIP backup file to rebuild your full journal and photo gallery on a new server or machine.
 * **Pure Studio Logbook Mode (Disable Challenges Entirely):** Turn off challenges entirely with a single toggle in Settings to use Centrd as a peaceful, pressure-free studio diary with an unfiltered studio overview dashboard.
-* **Interactive Sticky Notes:** Attach stage-specific sticky notes (e.g. *Wet Clay*, *Trimmed*, *Glaze Application*, *Fired*) to any entry. Notes are color-coded and organized in an interactive sticky-note stack on each entry card.
-* **Full-Screen Lightbox & Stage Remapping:** View photos in high-res lightbox modals with instant stage remapping (reassign a photo's stage from Wet Clay to Bisque or Glazed without re-uploading).
+* **Interactive Sticky Notes:** Attach stage-specific sticky notes (e.g. *Wet Clay*, *Trimmed*, *Glaze Application*, *Fired*) to any entry. Notes are color-coded and organized in an interactive sticky-note stack on each entry card. Images related to the stage appear in the sticky note when opened.
+* **Full-Screen Lightbox & Stage Remapping:** You can map images to different stages when they are opened, or delete them. 
 * **Customizable Pottery Stages:** Add custom pottery stages (e.g. *Underglazed*, *Wood Fired*, *Raku Fired*) or delete/remap existing stages.
 * **Custom Weight Classes & Class Targets:** Define custom weight categories with specific weights, names, units, and target counts.
 * **Flexible Decimal Weights & Global Units:** Log throws using precise decimal weights (e.g. `1.3 lb` or `0.8 kg`). The app automatically maps entries to the closest whole-number challenge class while preserving the exact decimal value in history. Globally switch between Pounds (`lb`) and Kilograms (`kg`).
 * **Pacing Strategies & Deadlines:** Track pacing strategies including custom target dates or daily/weekly/monthly cadence targets.
-* **Real-Time Cross-Device Sync:** Built-in Server-Sent Events (SSE) automatically stream updates between all connected phones, tablets, and computers on your home network in real-time.
+* **Prioritizes Quick Logging:** The app is minimalistically designed to be used quickly and efficiently to quickly log a pot with muddy fingers, not to be fiddling around with the millions of different options available in other apps.
 
 ---
 
