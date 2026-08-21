@@ -95,8 +95,9 @@ npm install
 npm run build
 npm run server
 ```
+Open **`http://localhost:5001`** on your computer!
 
-Open **`http://localhost:5001`** in your browser!
+> 📲 **Connecting from a phone, iPad, or tablet?** To access Centrd from your mobile devices across your home Wi-Fi network, see [Accessing Across Your Home Network](#-accessing-across-your-home-network).
 
 ---
 
