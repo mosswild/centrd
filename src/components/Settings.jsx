@@ -19,7 +19,7 @@ export default function Settings({ settings, throws = [], user, onSettingsUpdate
   const [profileSuccess, setProfileSuccess] = useState(false);
 
   const [enableChallenge, setEnableChallenge] = useState(settings.enableChallenge !== false);
-  const [challengeName, setChallengeName] = useState(settings.challengeName || '200 Cylinder Challenge');
+  const [challengeName, setChallengeName] = useState(settings.challengeName || '200 Piece Challenge');
   const [targetCylinders, setTargetCylinders] = useState(settings.targetCylinders || 200);
   const [scheduleType, setScheduleType] = useState(settings.scheduleType || (settings.hasTimeLimit ? 'deadline' : 'none'));
   const [startDate, setStartDate] = useState(settings.startDate || new Date().toISOString().split('T')[0]);
@@ -1200,7 +1200,7 @@ export default function Settings({ settings, throws = [], user, onSettingsUpdate
               color: 'var(--text-secondary)',
               fontSize: '0.88rem'
             }}>
-              🌿 <strong>Challenge Mode is currently disabled.</strong> Your throwing entries will be recorded in your studio log without target goals or deadlines.
+              🌿 <strong>Challenge Mode is currently disabled.</strong> Your pottery entries will be recorded in your studio log without target goals or deadlines.
             </div>
           )}
 
@@ -1477,13 +1477,13 @@ export default function Settings({ settings, throws = [], user, onSettingsUpdate
               Delete Potter Profile
             </h4>
             <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.15rem' }}>
-              Permanently delete your potter profile, settings, throwing logs, and photos. Other potter profiles will remain safe.
+              Permanently delete your potter profile, settings, piece logs, and photos. Other potter profiles will remain safe.
             </p>
           </div>
           <button
             type="button"
             onClick={async () => {
-              const confirmMsg = `Are you sure you want to delete profile "${user.name}"?\n\nAll your settings, throwing logs, notes, and photos will be permanently deleted. Other potter profiles will remain safe. This cannot be undone.`;
+              const confirmMsg = `Are you sure you want to delete profile "${user.name}"?\n\nAll your settings, piece logs, notes, and photos will be permanently deleted. Other potter profiles will remain safe. This cannot be undone.`;
               if (window.confirm(confirmMsg)) {
                 try {
                   await deleteProfile(user.id);

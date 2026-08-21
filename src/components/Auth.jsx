@@ -244,7 +244,7 @@ export default function Auth() {
           </div>
 
           <h1 className="serif-title" style={{ fontSize: '2.2rem', marginBottom: '0.4rem', fontWeight: 700 }}>
-            Who is throwing today?
+            Who is in the studio today?
           </h1>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem' }}>
             Select your potter profile to access your logs and challenge goals.

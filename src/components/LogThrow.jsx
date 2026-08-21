@@ -150,7 +150,7 @@ export default function LogThrow({ settings, user, onNavigateToHistory }) {
         status,
         notes: initialNoteText,
         notesArray: initialNotesArray,
-        challengeName: settings?.challengeName || '200 Cylinder Challenge',
+        challengeName: settings?.challengeName || '200 Piece Challenge',
         photos: []
       };
 
@@ -194,13 +194,13 @@ export default function LogThrow({ settings, user, onNavigateToHistory }) {
     <div className="log-throw-view animate-fade-in" style={{ maxWidth: '640px', margin: '0 auto' }}>
       <div style={{ marginBottom: '2rem' }}>
         <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--terracotta)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-          Wheel Session
+          Studio Session
         </span>
         <h1 className="serif-title" style={{ fontSize: '2.2rem', fontWeight: 700, marginTop: '0.2rem' }}>
-          Log Thrown Piece
+          Log New Piece
         </h1>
         <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem' }}>
-          Record your throw metrics and take notes on the shape, walls, or collapse reasons.
+          Record your piece metrics and take notes on the shape, technique, or glaze plan.
         </p>
       </div>
 
@@ -241,7 +241,7 @@ export default function LogThrow({ settings, user, onNavigateToHistory }) {
           </div>
 
           <div>
-            <label htmlFor="dateThrown">Date Thrown</label>
+            <label htmlFor="dateThrown">Date Created</label>
             <input
               id="dateThrown"
               type="date"
@@ -251,9 +251,9 @@ export default function LogThrow({ settings, user, onNavigateToHistory }) {
           </div>
         </div>
 
-        {/* Cylinder Status */}
+        {/* Piece Status */}
         <div>
-          <label>Cylinder Quality / Status</label>
+          <label>Piece Quality / Status</label>
           <div style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))',
@@ -261,7 +261,7 @@ export default function LogThrow({ settings, user, onNavigateToHistory }) {
             marginTop: '0.4rem'
           }}>
             {[
-              { id: 'Successful', color: 'var(--success)', desc: 'Successful throw' },
+              { id: 'Successful', color: 'var(--success)', desc: 'Successful piece' },
               { id: 'Failed', color: 'var(--collapse)', desc: 'Collapsed / Failed' },
               { id: 'Flawed', color: 'var(--ochre)', desc: 'Slight errors / Uneven' }
             ].map(item => {
@@ -371,7 +371,7 @@ export default function LogThrow({ settings, user, onNavigateToHistory }) {
 
         {/* Notes */}
         <div>
-          <label htmlFor="notes">Throwing Notes & Improvement Points</label>
+          <label htmlFor="notes">Studio Notes & Details</label>
           <div style={{ position: 'relative' }}>
             <FileText size={18} style={{
               position: 'absolute',
@@ -382,7 +382,7 @@ export default function LogThrow({ settings, user, onNavigateToHistory }) {
             <textarea
               id="notes"
               rows={4}
-              placeholder="How did the centering go? Did the walls collapse during the third pull? Keep notes on shape, thickness, rim compression..."
+              placeholder="Keep notes on clay body, shaping technique, dimensions, rim compression, or glaze plan..."
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               style={{ paddingLeft: '2.8rem', paddingTop: '0.85rem' }}

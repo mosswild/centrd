@@ -308,10 +308,10 @@ export default function History({ throws, settings, user }) {
       {/* Header */}
       <div style={{ marginBottom: '2rem' }}>
         <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--terracotta)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-          Challenge Records
+          Studio Records
         </span>
         <h1 className="serif-title" style={{ fontSize: '2.2rem', fontWeight: 700, marginTop: '0.2rem' }}>
-          Throwing Logs
+          Piece Logbook
         </h1>
         <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem' }}>
           Swipe or browse your past pottery pieces. Update them with bisqued or glazed photos as they progress.
@@ -434,7 +434,7 @@ export default function History({ throws, settings, user }) {
         <div className="glass" style={{ textAlign: 'center', padding: '4rem 2rem', borderRadius: '24px', color: 'var(--text-secondary)' }}>
           <ImageIcon size={48} style={{ color: 'var(--border-color)', marginBottom: '1rem' }} />
           <p style={{ fontSize: '1.1rem', fontWeight: 600 }}>No pieces matched your filters.</p>
-          <p style={{ fontSize: '0.9rem' }}>Go log a throw or adjust your search filters!</p>
+          <p style={{ fontSize: '0.9rem' }}>Go log a piece or adjust your search filters!</p>
         </div>
       ) : (
         <div>

@@ -185,7 +185,7 @@ export default function Dashboard({ throws = [], settings, user, onSettingsUpdat
 
           <div>
             <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--terracotta)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              Centrd: A Throwing Diary
+              Centrd: A Pottery Logbook
             </span>
             <h1 className="serif-title" style={{ fontSize: '2.2rem', fontWeight: 700, marginTop: '0.1rem', lineHeight: '1.2' }}>
               Welcome back, {user.name}
@@ -356,7 +356,7 @@ export default function Dashboard({ throws = [], settings, user, onSettingsUpdat
                 Pottery Studio Logbook
               </h2>
               <p style={{ color: 'var(--text-secondary)', fontSize: '0.92rem', marginBottom: '1.75rem' }}>
-                Your throwing practice captured in clay, sticky notes, and stage photos.
+                Your pottery practice captured in clay, sticky notes, and stage photos.
               </p>
 
               <div style={{
