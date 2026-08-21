@@ -367,7 +367,7 @@ export default function Dashboard({ throws = [], settings, user, onSettingsUpdat
               }}>
                 <div style={{ background: 'var(--bg-secondary)', padding: '1rem', borderRadius: '16px', border: '1px solid var(--border-color)' }}>
                   <div style={{ fontSize: '1.6rem', fontWeight: 700, color: 'var(--terracotta)' }}>{totalHistoryCount}</div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 600, marginTop: '0.2rem' }}>Total Throws</div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 600, marginTop: '0.2rem' }}>Total Pieces</div>
                 </div>
 
                 <div style={{ background: 'var(--bg-secondary)', padding: '1rem', borderRadius: '16px', border: '1px solid var(--border-color)' }}>
@@ -481,14 +481,14 @@ export default function Dashboard({ throws = [], settings, user, onSettingsUpdat
                       <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 600 }}>
                         Current Period
                       </span>
-                      <span style={{ fontSize: '1.2rem', fontWeight: 700, color: cadenceSuccess ? 'var(--success)' : 'var(--terracotta)' }}>
-                        {currentPeriodThrows} / {cadenceTarget}
+                      <span style={{ fontSize: '1.2rem', fontWeight: 700, color: cadenceGoalMet ? 'var(--success)' : 'var(--terracotta)' }}>
+                        {cadenceCount} / {cadenceTarget}
                       </span>
                     </div>
                     <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.4rem' }}>
-                      {cadenceSuccess 
+                      {cadenceGoalMet 
                         ? `🎉 Target reached for this ${cadencePeriod}!` 
-                        : `${cadenceTarget - currentPeriodThrows} more throw(s) needed this ${cadencePeriod}.`}
+                        : `${cadenceRemaining} more piece(s) needed this ${cadencePeriod}.`}
                     </p>
                   </div>
                 </div>
