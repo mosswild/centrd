@@ -70,13 +70,37 @@ It runs on a **100% self-hosted, local-first architecture**, meaning all potter 
   </tr>
 </table>
 
-## 🚀 Home Server Setup Walkthrough
+## 🚀 Setup & Installation
 
-Setting up Centrd on a home server (like a Synology NAS, Raspberry Pi, Home Assistant host, or any local server) is quick and requires no external databases or cloud API keys.
+Setting up Centrd on your local computer or home server (Synology NAS, Raspberry Pi, Docker) is quick and requires no external databases or cloud API keys.
 
 ---
 
-### Option A: Docker Container & Synology NAS Deployment (Recommended for NAS)
+### ⚡ Quick Start: Local Node.js Setup (Fastest & Simplest)
+
+#### 📋 Prerequisites
+* **Node.js** (v18.0 or newer)
+* **npm** (comes packaged with Node.js)
+
+#### 1. Clone & Install
+```bash
+git clone https://github.com/mosswild/centrd.git
+cd centrd
+npm install
+```
+
+#### 2. Build & Start
+```bash
+# Build frontend assets & boot the server
+npm run build
+npm run server
+```
+
+Open **`http://localhost:5001`** in your browser!
+
+---
+
+### 🐳 Docker Container & Home Server Setup (For NAS / Raspberry Pi)
 
 Centrd can be deployed inside a Docker container with external volume mounts exposing the database (`db.json`) and photo uploads (`uploads/`) to your host filesystem.
 
@@ -109,39 +133,6 @@ docker compose up -d --build
 ```
 
 > 📖 **Synology NAS Setup Guide:** For step-by-step GUI instructions using **Synology Container Manager**, check out the [Synology NAS Docker Setup Guide](docs/DOCKER_SYNOLOGY.md).
-
----
-
-### Option B: Local Node.js Setup (Bare Metal / Development)
-
-#### 📋 Prerequisites
-* **Node.js** (v18.0 or newer)
-* **npm** (comes packaged with Node.js)
-
-#### 1. Download and Install
-Clone the repository and install the fullstack dependencies:
-
-```bash
-# Clone the repository
-git clone https://github.com/mosswild/centrd.git
-cd centrd
-
-# Install packages
-npm install
-```
-
-#### 2. Compile and Start the Server
-From the root of your cloned `centrd` directory, build the optimized client files and boot the database backend:
-
-```bash
-# 1. Compile the frontend built assets
-npm run build
-
-# 2. Start the Express server
-npm run server
-```
-
-The server is now running on port **`5001`**.
 
 ---
 

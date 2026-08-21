@@ -102,14 +102,9 @@ export default function Auth() {
             display: 'inline-flex',
             alignItems: 'center',
             justifyContent: 'center',
-            background: 'var(--terracotta-light)',
-            color: 'var(--terracotta)',
-            width: '64px',
-            height: '64px',
-            borderRadius: '20px',
             marginBottom: '1.25rem'
           }}>
-            <Flame size={32} strokeWidth={2.5} />
+            <AppLogo size={56} />
           </div>
 
           <h2 className="serif-title" style={{ fontSize: '1.8rem', marginBottom: '0.4rem', fontWeight: 700 }}>
