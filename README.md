@@ -28,7 +28,7 @@ It runs on a **100% self-hosted, local-first architecture**, meaning all potter 
 * **Custom Weight Classes & Class Targets:** Define custom weight categories with specific weights, names, units, and target counts.
 * **Flexible Decimal Weights & Global Units:** Log throws using precise decimal weights (e.g. `1.3 lb` or `0.8 kg`). The app automatically maps entries to the closest whole-number challenge class while preserving the exact decimal value in history. Globally switch between Pounds (`lb`) and Kilograms (`kg`).
 * **Pacing Strategies & Deadlines:** Track pacing strategies including custom target dates or daily/weekly/monthly cadence targets.
-* **Prioritizes Quick Logging:** The app is minimalistically designed to be used quickly and efficiently to quickly log a pot with muddy fingers, not to be fiddling around with the millions of different options available in other apps.
+* **Prioritizes Quick Logging:** The app is minimalistically designed to quickly log a pot with muddy fingers, not to be fiddling around with the millions of different options available in other apps.
 
 ---
 
