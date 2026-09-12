@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { updateThrowLog, uploadThrowPhoto, deleteThrowLog } from '../db';
-import { Calendar, Trash2, Tag, Camera, Filter, Search, Image as ImageIcon, AlertCircle } from 'lucide-react';
+import { Calendar, Trash2, Tag, Camera, Filter, Search, Image as ImageIcon, AlertCircle, CheckCircle2 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import PostItNotesStack from './PostItNotesStack';
 import ImageLightboxModal from './ImageLightboxModal';
@@ -328,17 +328,9 @@ export default function History({ throws, settings, user }) {
       />
 
       {/* Filter and Search Bar */}
-      <div className="glass" style={{
-        padding: '1.25rem',
-        borderRadius: '20px',
-        display: 'flex',
-        flexWrap: 'wrap',
-        gap: '1rem',
-        alignItems: 'center',
-        marginBottom: '2rem'
-      }}>
+      <div className="glass history-filter-bar">
         {/* Search */}
-        <div style={{ flex: '1 1 200px', position: 'relative' }}>
+        <div className="history-search-col">
           <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }} />
           <input
             type="text"
@@ -351,14 +343,15 @@ export default function History({ throws, settings, user }) {
 
         {/* Filter Tags */}
         {uniqueChallengeNames.length > 0 && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <div className="history-filter-item history-filter-tags">
+            <Tag size={14} style={{ color: 'var(--terracotta)', flexShrink: 0 }} />
             <select
               value={challengeFilter}
               onChange={(e) => setChallengeFilter(e.target.value)}
-              style={{ padding: '0.5rem 2rem 0.5rem 0.75rem', fontSize: '0.9rem', width: 'auto', borderRadius: '10px' }}
+              title="Filter by Tag or Challenge"
             >
               <option value="all">All Tags ({throws.length})</option>
-              <option value="current">Active Challenge Tag ({settings?.challengeName || 'Active'})</option>
+              <option value="current">Active: {settings?.challengeName || 'Active'}</option>
               {uniqueChallengeNames.map(cName => (
                 <option key={cName} value={cName}>Tag: {cName}</option>
               ))}
@@ -367,12 +360,12 @@ export default function History({ throws, settings, user }) {
         )}
 
         {/* Filter Weight */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <Filter size={14} style={{ color: 'var(--text-secondary)' }} />
+        <div className="history-filter-item history-filter-weight">
+          <Filter size={14} style={{ color: 'var(--text-secondary)', flexShrink: 0 }} />
           <select
             value={selectedWeight}
             onChange={(e) => setSelectedWeight(e.target.value)}
-            style={{ padding: '0.5rem 2rem 0.5rem 0.75rem', fontSize: '0.9rem', width: 'auto', borderRadius: '10px' }}
+            title="Filter by Weight"
           >
             <option value="all">All Weights</option>
             {settings.weightCategories.map(cat => (
@@ -382,12 +375,12 @@ export default function History({ throws, settings, user }) {
         </div>
 
         {/* Filter Status */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <Tag size={14} style={{ color: 'var(--text-secondary)' }} />
+        <div className="history-filter-item history-filter-status">
+          <CheckCircle2 size={14} style={{ color: 'var(--text-secondary)', flexShrink: 0 }} />
           <select
             value={selectedStatus}
             onChange={(e) => setSelectedStatus(e.target.value)}
-            style={{ padding: '0.5rem 2rem 0.5rem 0.75rem', fontSize: '0.9rem', width: 'auto', borderRadius: '10px' }}
+            title="Filter by Status"
           >
             <option value="all">All Statuses</option>
             <option value="Successful">Successful</option>
